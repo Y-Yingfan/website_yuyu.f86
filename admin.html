@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Yuyu 代購｜後台管理</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --bg:#f5f3ef;--panel:#ffffff;--ink:#2f2f2f;--muted:#6b6a62;--line:#e6e2da;--accent:#c2a35d;--danger:#b42318;--shadow:0 10px 28px rgba(0,0,0,.08)
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif}
+    .wrap{max-width:1100px;margin:0 auto;padding:18px}
+    h1{margin:0 0 10px;font-size:clamp(20px,4vw,28px)}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px;margin:10px 0}
+    label{display:block;margin:8px 0 6px;color:var(--muted);font-size:14px}
+    input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+    .row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .btn{padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer}
+    .btn.primary{background:var(--accent);color:#fff;border:none}
+    .btn.danger{background:var(--danger);color:#fff;border:none}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+    .pitem{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+    .pitem .pic{aspect-ratio:4/3;background:linear-gradient(180deg,#fff,#f0ede6);display:grid;place-items:center}
+    .pitem img{width:100%;height:100%;object-fit:cover}
+    .pitem .meta{padding:10px}
+    .muted{color:var(--muted)}
+    .toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between}
+    .right{display:flex;gap:8px}
+    .notice{font-size:13px;color:var(--muted)}
+    .dangerText{color:var(--danger)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Yuyu 代購｜後台管理</h1>
+    <div class="card" id="authCard">
+      <div class="toolbar">
+        <strong>登入</strong>
+        <div class="right"><span id="who" class="muted"></span><button id="btnLogout" class="btn">登出</button></div>
+      </div>
+      <div id="authArea">
+        <div class="row">
+          <div>
+            <label>電子信箱</label>
+            <input id="email" placeholder="you@example.com"/>
+          </div>
+          <div>
+            <label>密碼</label>
+            <input id="password" type="password" placeholder="至少 8 碼"/>
+          </div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button id="btnSignIn" class="btn primary">登入</button>
+          <button id="btnSignUp" class="btn">註冊（第一次使用）</button>
+        </div>
+        <p class="notice">建議只保留你自己一個帳號。Supabase 會透過 RLS 政策限制只有已登入帳號能新增/修改。</p>
+      </div>
+    </div>
+
+    <div class="card" id="formCard" style="display:none">
+      <div class="toolbar">
+        <strong>新增 / 編輯商品</strong>
+        <div class="right"><button id="btnResetForm" class="btn">清空表單</button></div>
+      </div>
+      <div class="row">
+        <div>
+          <label>商品名稱</label>
+          <input id="name"/>
+        </div>
+        <div>
+          <label>商品編號（自訂 ID）</label>
+          <input id="pid" placeholder="例如 A001"/>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>價格（整數）</label>
+          <input id="price" type="number" min="0" />
+        </div>
+        <div>
+          <label>分類</label>
+          <select id="category">
+            <option>香氛</option>
+            <option>藥妝</option>
+            <option>MUJI</option>
+            <option>御守 & 淨化噴霧</option>
+            <option>超商</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>狀態</label>
+          <select id="status">
+            <option>現貨</option>
+            <option>預購</option>
+          </select>
+        </div>
+        <div>
+          <label>到貨（例如：2-4 天 / 約 10–14 天）</label>
+          <input id="eta"/>
+        </div>
+      </div>
+      <label>標籤（用 | 分隔，如：熱賣|送禮）</label>
+      <input id="tags"/>
+      <label>商品圖片</label>
+      <input id="file" type="file" accept="image/*"/>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button id="btnSave" class="btn primary">儲存</button>
+        <button id="btnDelete" class="btn danger" style="display:none">刪除</button>
+      </div>
+      <p class="notice">圖片會上傳到 Supabase Storage（bucket: <code>products</code>），網址會自動存到資料表。</p>
+    </div>
+
+    <div class="card" id="listCard" style="display:none">
+      <div class="toolbar">
+        <strong>商品清單</strong>
+        <div class="right">
+          <input id="kw" placeholder="搜尋名稱或編號" style="width:240px"/>
+          <button id="btnReload" class="btn">重新整理</button>
+        </div>
+      </div>
+      <div id="grid" class="grid"></div>
+    </div>
+
+    <div class="card">
+      <details>
+        <summary>初次設定說明（Supabase）</summary>
+        <ol>
+          <li>到 <a href="https://supabase.com" target="_blank">Supabase</a> 建立專案，在 Project Settings 複製 <b>URL</b> 與 <b>anon public key</b>。</li>
+          <li>建立資料表 <code>products</code>，欄位：
+            <pre><code>id text primary key,
+name text not null,
+price numeric not null,
+category text,
+status text,
+eta text,
+img_url text,
+tags text,
+created_at timestamp with time zone default now()</code></pre>
+          </li>
+          <li>打開 RLS 並新增政策：
+            <ul>
+              <li><b>讀取</b>：允許所有人 <code>SELECT</code>（網站前台要能讀） — <em>using: true</em></li>
+              <li><b>寫入</b>：只允許已登入的管理者 <code>INSERT/UPDATE/DELETE</code> — 例：<br>
+              <code>auth.role() = 'authenticated' AND auth.email() = '你的登入email'</code></li>
+            </ul>
+          </li>
+          <li>建立 Storage bucket：<code>products</code>（Public）。在 Storage Policies 中：
+            <ul>
+              <li>Read：allow if <code>true</code>（公開讀取產品圖）</li>
+              <li>Write：allow if <code>auth.role() = 'authenticated'</code></li>
+            </ul>
+          </li>
+          <li>把下方 <code>SUPABASE_URL</code> 與 <code>SUPABASE_ANON_KEY</code>、<code>ADMIN_EMAIL</code> 換成你的。</li>
+        </ol>
+      </details>
+    </div>
+  </div>
+
+  <script>
+    // ===== 1) 這裡填你的 Supabase 設定 =====
+    const SUPABASE_URL = 'https://yuyu.f86.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';
+    const ADMIN_EMAIL = 'lelouvre.yu@gmail.com'; // 寫入政策會用到
+
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ===== 2) Auth =====
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    const who = document.getElementById('who');
+    const authArea = document.getElementById('authArea');
+    const formCard = document.getElementById('formCard');
+    const listCard = document.getElementById('listCard');
+
+    async function refreshAuth(){
+      const { data:{ user } } = await sb.auth.getUser();
+      if(user){
+        who.textContent = user.email || '';
+        authArea.style.display = 'none';
+        formCard.style.display = '';
+        listCard.style.display = '';
+        loadProducts();
+      } else {
+        who.textContent = '';
+        authArea.style.display = '';
+        formCard.style.display = 'none';
+        listCard.style.display = 'none';
+      }
+    }
+
+    document.getElementById('btnSignIn').onclick = async()=>{
+      const { error } = await sb.auth.signInWithPassword({ email: email.value, password: password.value });
+      if(error) return alert(error.message);
+      refreshAuth();
+    };
+    document.getElementById('btnSignUp').onclick = async()=>{
+      const { error } = await sb.auth.signUp({ email: email.value, password: password.value });
+      if(error) return alert(error.message);
+      alert('註冊成功，請到信箱驗證後再登入');
+    };
+    document.getElementById('btnLogout').onclick = async()=>{ await sb.auth.signOut(); refreshAuth(); };
+
+    refreshAuth();
+
+    // ===== 3) CRUD =====
+    const pid = document.getElementById('pid');
+    const nameEl = document.getElementById('name');
+    const price = document.getElementById('price');
+    const category = document.getElementById('category');
+    const status = document.getElementById('status');
+    const eta = document.getElementById('eta');
+    const tags = document.getElementById('tags');
+    const file = document.getElementById('file');
+    const btnSave = document.getElementById('btnSave');
+    const btnDelete = document.getElementById('btnDelete');
+    const btnResetForm = document.getElementById('btnResetForm');
+
+    let editingId = null;
+
+    function resetForm(){
+      editingId = null;
+      pid.value = nameEl.value = eta.value = tags.value = '';
+      price.value = '';
+      status.value = '現貨';
+      category.value = '香氛';
+      file.value = '';
+      btnDelete.style.display = 'none';
+    }
+
+    btnResetForm.onclick = resetForm;
+
+    async function uploadImageIfAny(id){
+      if(!file.files[0]) return null;
+      const f = file.files[0];
+      const ext = f.name.split('.').pop();
+      const path = `${id}/${Date.now()}.${ext}`;
+      const { error:upErr } = await sb.storage.from('yuyu.f86').upload(path, f, { upsert:true });
+      if(upErr) throw upErr;
+      const { data } = sb.storage.from('yuyu.f86').getPublicUrl(path);
+      return data.publicUrl;
+    }
+
+    btnSave.onclick = async()=>{
+      const id = (pid.value||'').trim();
+      if(!id) return alert('請輸入商品編號');
+      if(!nameEl.value) return alert('請輸入商品名稱');
+      const imgUrl = await uploadImageIfAny(id);
+      const row = {
+        id,
+        name: nameEl.value,
+        price: Number(price.value||0),
+        category: category.value,
+        status: status.value,
+        eta: eta.value,
+        img_url: imgUrl || undefined,
+        tags: tags.value
+      };
+      let error;
+      if(editingId){
+        ({ error } = await sb.from('products').update(row).eq('id', editingId));
+      } else {
+        ({ error } = await sb.from('products').insert(row));
+      }
+      if(error){ alert(error.message); return; }
+      resetForm();
+      loadProducts();
+    };
+
+    btnDelete.onclick = async()=>{
+      if(!editingId) return;
+      if(!confirm('確定要刪除？')) return;
+      const { error } = await sb.from('products').delete().eq('id', editingId);
+      if(error){ alert(error.message); return; }
+      resetForm();
+      loadProducts();
+    };
+
+    const grid = document.getElementById('grid');
+    const kw = document.getElementById('kw');
+    document.getElementById('btnReload').onclick = ()=>loadProducts();
+    kw.oninput = ()=>renderProducts(window.__rows||[], kw.value);
+
+    async function loadProducts(){
+      const { data:rows, error } = await sb.from('products').select('*').order('created_at', { ascending:false });
+      if(error){ alert(error.message); return; }
+      window.__rows = rows || [];
+      renderProducts(rows||[], kw.value);
+    }
+
+    function renderProducts(rows, keyword=''){
+      const k = (keyword||'').toLowerCase();
+      const list = rows.filter(r=>!k || (r.name+" "+r.id).toLowerCase().includes(k));
+      grid.innerHTML = list.map(r=>{
+        const img = r.img_url ? `<img src="${r.img_url}" alt="${r.name}">` : '<div class="muted">(無圖片)</div>';
+        const tagStr = (r.tags||'').split('|').filter(Boolean).map(t=>`<span style="border:1px solid var(--line);border-radius:999px;padding:2px 6px;font-size:12px;margin-right:6px">${t}</span>`).join('');
+        return `<article class="pitem">
+          <div class="pic">${img}</div>
+          <div class="meta">
+            <div style="display:flex;justify-content:space-between;align-items:center"><strong>${r.name}</strong><span class="muted">${r.id}</span></div>
+            <div>$${Number(r.price||0).toLocaleString('zh-TW')}・${r.category}・${r.status}</div>
+            <div class="muted">到貨：${r.eta||'-'}</div>
+            <div style="margin-top:6px">${tagStr}</div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button class="btn" data-act="edit" data-id="${r.id}">編輯</button>
+              <button class="btn danger" data-act="del" data-id="${r.id}">刪除</button>
+            </div>
+          </div>
+        </article>`
+      }).join('');
+      grid.querySelectorAll('[data-act]').forEach(btn=>{
+        btn.onclick = ()=>{
+          const id = btn.getAttribute('data-id');
+          const act = btn.getAttribute('data-act');
+          const r = (window.__rows||[]).find(x=>x.id===id);
+          if(!r) return;
+          if(act==='edit'){
+            editingId = r.id;
+            pid.value = r.id;
+            nameEl.value = r.name;
+            price.value = r.price;
+            category.value = r.category;
+            status.value = r.status;
+            eta.value = r.eta||'';
+            tags.value = r.tags||'';
+            btnDelete.style.display = '';
+            window.scrollTo({ top:0, behavior:'smooth' });
+          }else if(act==='del'){
+            editingId = r.id; btnDelete.click();
+          }
+        }
+      })
+    }
+  </script>
+</body>
+</html>
