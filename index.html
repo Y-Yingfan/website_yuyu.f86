@@ -4,140 +4,61 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="robots" content="noindex,nofollow" />
-  <title>旅游人生選務代購｜Select Shop</title>
+  <title>旅游人生選物代購｜Select Shop</title>
   <!-- LINE LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <!-- Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root{
-      /* earthy + wabi-sabi */
-      --bg:#f5f3ef;          /* warm sand */
-      --panel:#ffffff;       /* paper */
-      --ink:#2f2f2f;         /* sumi ink */
-      --muted:#6b6a62;       /* taupe */
-      --line:#e6e2da;        /* light stroke */
-      --accent:#c2a35d;      /* warm gold */
-      --good:#2c7a47;        /* in stock */
-      --warn:#a05b00;        /* preorder */
+      --bg:#f5f3ef;
+      --panel:#ffffff;
+      --ink:#2f2f2f;
+      --muted:#6b6a62;
+      --line:#e6e2da;
+      --accent:#c2a35d;
+      --good:#2c7a47;
+      --warn:#a05b00;
       --shadow:0 10px 28px rgba(0,0,0,.08)
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
     body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif}
     .wrap{max-width:1060px;margin:0 auto;padding:18px}
-
-    /* header */
-    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 14px}
-    .brand{display:flex;align-items:center;gap:10px}
-    .logo{width:40px;height:40px;border-radius:10px;background:linear-gradient(180deg,#fff,#f0ede6);border:1px solid var(--line);display:grid;place-items:center;box-shadow:var(--shadow)}
-    .logo span{filter:grayscale(.2)}
-    h1{font-size:clamp(20px,4vw,28px);margin:0;letter-spacing:.5px}
-    .actions{display:flex;gap:8px}
-    .btn{padding:10px 14px;border:1px solid var(--line);border-radius:999px;background:var(--panel);cursor:pointer}
-    .btn.primary{background:var(--accent);color:#fff;border:none}
-
-    /* announcement */
-    .ann{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px;color:var(--muted);box-shadow:var(--shadow)}
-
-    /* controls */
-    .controls{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px;margin:12px 0}
-    .control{background:var(--panel);border:1px solid var(--line);border-radius:12px;display:flex;align-items:center;padding:10px 12px;gap:10px}
-    .control input,.control select{flex:1;border:none;background:transparent;outline:none;font-size:14px;color:var(--ink)}
-
-    /* grid */
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:12px 0 80px}
-    .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow);transition:transform .15s}
-    .card:hover{transform:translateY(-2px)}
-    .pic{position:relative;aspect-ratio:4/3;background:linear-gradient(180deg,#fff,#f0ede6)}
-    .pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-    .badge{position:absolute;left:10px;top:10px;padding:4px 8px;border-radius:999px;font-size:12px;color:#fff}
-    .badge.stock{background:var(--good)}
-    .badge.pre{background:var(--warn)}
-    .meta{padding:12px 12px 8px}
-    .meta h3{margin:0 0 6px;font-size:16px}
-    .price{font-weight:800;color:#1f1f1f}
-    .eta{color:var(--muted);font-size:12px;margin-left:6px}
-    .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-    .tag{border:1px solid var(--line);border-radius:999px;padding:3px 8px;font-size:12px;color:var(--muted)}
-    .ops{display:flex;gap:8px;padding:10px 12px 14px}
-    .op{flex:1;border:1px solid var(--line);border-radius:999px;background:#faf9f6;padding:9px 10px;font-size:14px;cursor:pointer}
-    .op.primary{background:var(--accent);color:#fff;border:none}
-
-    /* footer */
-    footer{margin:50px 0 110px;color:var(--muted);font-size:13px}
-
-    /* sticky cta */
-    .cta{position:fixed;left:0;right:0;bottom:0;background:#fffaf0;border-top:1px solid var(--line);padding:10px 12px;display:flex;gap:10px;align-items:center;justify-content:center}
-    .cta a{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;color:#2f2f2f;text-decoration:none}
-    .cta a.primary{background:var(--accent);color:#fff;border:none}
-
-    /* toast */
-    .toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#111;color:#fff;padding:8px 12px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
-    .toast.show{opacity:1}
-
-    /* Gate screens */
     .gate{max-width:720px;margin:24px auto 0;padding:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);text-align:center}
     .gate h2{margin:6px 0 8px}
     .gate p{color:var(--muted);margin:6px 0}
     .gate .btns{display:flex;gap:10px;justify-content:center;margin-top:10px}
-    .hide{display:none}
-
+    .btn{padding:10px 14px;border:1px solid var(--line);border-radius:999px;background:var(--panel);cursor:pointer}
+    .btn.primary{background:var(--accent);color:#fff;border:none}
+    .cta{position:fixed;left:0;right:0;bottom:0;background:#fffaf0;border-top:1px solid var(--line);padding:10px 12px;display:flex;gap:10px;align-items:center;justify-content:center}
+    .cta a{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;color:#2f2f2f;text-decoration:none}
+    .cta a.primary{background:var(--accent);color:#fff;border:none}
+    .toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#111;color:#fff;padding:8px 12px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+    .toast.show{opacity:1}
     /* ===== Order Modal ===== */
-.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.35);padding:16px;z-index:999}
-.modal.show{display:flex}
-.modal .panel{max-width:420px;width:100%;background:#fff;border-radius:14px;
-  padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.15)}
-.modal .panel h3{margin:0 0 6px}
-.modal .panel p{margin:6px 0 12px;color:var(--muted)}
-.modal .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
-.btn.outline{background:#fff;border:1px solid var(--line)}
-.linkbtn{background:none;border:none;color:var(--muted);margin-top:8px;cursor:pointer}
-
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+      background:rgba(0,0,0,.35);padding:16px;z-index:999}
+    .modal.show{display:flex}
+    .modal .panel{max-width:420px;width:100%;background:#fff;border-radius:14px;
+      padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+    .modal .panel h3{margin:0 0 6px}
+    .modal .panel p{margin:6px 0 12px;color:var(--muted)}
+    .modal .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+    .btn.outline{background:#fff;border:1px solid var(--line)}
+    .linkbtn{background:none;border:none;color:var(--muted);margin-top:8px;cursor:pointer}
   </style>
 </head>
 <body>
-  <!-- ===== CONFIG ——— 改這裡（四個值） ===== -->
+  <!-- ===== CONFIG ===== -->
   <script>
-    const LIFF_ID = '2008022206-rqDnER1B';                        // LINE Developers 的 LIFF ID
-    const OA_LINK = 'https://line.me/R/ti/p/@958xfkot';  // 你的官方帳號加好友連結（含 @）
-
-    const SUPABASE_URL = 'https://yuyu.f86.supabase.co';  // Supabase Project URL
-    const SUPABASE_ANON_KEY = 'sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';                // Supabase Publishable / anon key
-    const DEV_MODE = false; // ← 如需暫時略過 LINE Gate 以預覽商品，改成 true
+    const LIFF_ID = '2008022206-rqDnER1B';
+    const OA_LINK = 'https://line.me/R/ti/p/@958xfkot';
+    const SUPABASE_URL = 'https://yuyu.f86.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';
+    const DEV_MODE = false;
   </script>
 
-  <script>
-  // === 彈窗開關 ===
-  const ctaOrder = document.getElementById('ctaOrder');
-  const orderModal = document.getElementById('orderModal');
-  const btnCloseModal = document.getElementById('btnCloseModal');
-
-  ctaOrder?.addEventListener('click', (e) => {
-    e.preventDefault(); // 不要跳連結
-    orderModal.classList.add('show'); // 顯示彈窗
-    orderModal.setAttribute('aria-hidden', 'false'); // 無障礙：打開時標記可見
-    document.body.style.overflow = 'hidden'; // 鎖住背景捲動
-});
-
-btnCloseModal?.addEventListener('click', () => {
-    orderModal.classList.remove('show');
-    orderModal.setAttribute('aria-hidden', 'true'); // 無障礙：關閉時標記隱藏
-    document.body.style.overflow = ''; // 恢復背景捲動
-});
-
-// 點背景也關閉
-orderModal.addEventListener('click', (e) => {
-    if (e.target === orderModal) {
-        orderModal.classList.remove('show');
-        orderModal.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = '';
-    }
-});
-</script>
-
-  <!-- Gate: 1) LINE 登入 2) 加好友 3) 顯示商店 -->
+  <!-- Gate -->
   <div id="gateLogin" class="gate">
     <h2>登入 LINE 後開始逛</h2>
     <p>為了提供客服與出貨通知，請先以 LINE 登入。</p>
@@ -154,117 +75,53 @@ orderModal.addEventListener('click', (e) => {
     </div>
   </div>
 
-<div class="cta" id="shopCta">
-  <!-- 這顆按鈕改為打開彈窗 -->
-  <a class="primary" id="ctaOrder" href="#">立即私訊下單</a>
-  <a id="ctaCopy">複製下單格式</a>
-</div>
-
-<!-- ===== 彈窗（Pop-up）開始 ===== -->
-<div class="modal" id="orderModal" role="dialog" aria-modal="true" aria-hidden="true">
-  <div class="panel">
-    <h3>選擇聯絡方式</h3>
-    <p>下單系統還在開發中，要麻煩先用社群或是官方line私訊我 🧡</p>
-
-    <div class="grid2">
-      <!-- 社群 -->
-      <div>
-        <strong>社群</strong>
-        <p class="muted">密碼：<b>0628</b></p>
-        <a class="btn outline" id="btnCommunity"
-           href="https://line.me/ti/g2/fRmTHOkmCy8ite62TzDencHTqlruXj6um0DT7g?utm_source=invitation&utm_medium=link_copy&utm_campaign=default" target="_blank" rel="noopener">前往社群</a>
-      </div>
-
-      <!-- 官方 LINE -->
-      <div>
-        <strong>官方 LINE</strong>
-        <p class="muted">加入好友後私訊下單</p>
-        <a class="btn outline" id="btnOA"
-           href="https://line.me/R/ti/p/@958xfkot" target="_blank" rel="noopener">加入官方帳號</a>
-      </div>
-    </div>
-
-    <button class="linkbtn" id="btnCloseModal">關閉</button>
-  </div>
-</div>
-<!-- ===== 彈窗（Pop-up）結束 ===== -->
-
-
-    <div class="ann" id="announce">📣 本週上新：香氛擴香、藥妝補貨、MUJI 熱銷補單</div>
-
-    <div class="controls">
-      <label class="control" title="搜尋商品關鍵字">
-        🔎<input id="q" placeholder="搜尋：品牌 / 關鍵字 / 編號" />
-      </label>
-      <label class="control" title="分類">
-        📂
-        <select id="cat">
-          <option value="">全部分類</option>
-          <option>香氛</option>
-          <option>藥妝</option>
-          <option>MUJI</option>
-          <option>御守 & 淨化噴霧</option>
-          <option>超商</option>
-        </select>
-      </label>
-      <label class="control" title="排序">
-        ↕️
-        <select id="sort">
-          <option value="new">最新上架</option>
-          <option value="low">價格：低到高</option>
-          <option value="high">價格：高到低</option>
-        </select>
-      </label>
-    </div>
-
-    <div id="grid" class="grid" aria-live="polite" aria-atomic="true"></div>
-
-    <footer>
-      <details>
-        <summary>購買須知 / 退換貨政策</summary>
-        <ol>
-          <li>預購商品為海外代購，時程依供應商與航運為準，通常 7–21 天。</li>
-          <li>色差、螢幕顯示差異屬正常；尺寸以官方尺碼為準。</li>
-          <li>個人衛生品與客製化商品不受 7 天鑑賞，若有瑕疵請 24h 內私訊。</li>
-          <li>下單前請再次確認顏色/尺寸/數量；下單即同意上述規範。</li>
-        </ol>
-      </details>
-    </footer>
-  </div> <!-- /wrap -->
-
+  <!-- Sticky CTA -->
   <div class="cta hide" id="shopCta">
-    <a class="primary" id="ctaOrder" href="https://www.threads.com/@yuyu.f86?hl=zh-tw" target="_blank">立即私訊下單</a>
+    <a class="primary" id="ctaOrder" href="#">立即私訊下單</a>
     <a id="ctaCopy">複製下單格式</a>
   </div>
+
+  <!-- 彈窗 -->
+  <div class="modal" id="orderModal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="panel">
+      <h3>選擇聯絡方式</h3>
+      <p>下單系統還在開發中，要麻煩先用社群或是官方 LINE 私訊我 🧡</p>
+      <div class="grid2">
+        <div>
+          <strong>社群</strong>
+          <p class="muted">密碼：<b>0628</b></p>
+          <a class="btn outline" href="https://line.me/ti/g2/fRmTHOkmCy8ite62TzDencHTqlruXj6um0DT7g" target="_blank" rel="noopener">前往社群</a>
+        </div>
+        <div>
+          <strong>官方 LINE</strong>
+          <p class="muted">加入好友後私訊下單</p>
+          <a class="btn outline" href="https://line.me/R/ti/p/@958xfkot" target="_blank" rel="noopener">加入官方帳號</a>
+        </div>
+      </div>
+      <button class="linkbtn" id="btnCloseModal">關閉</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast">已複製，下單訊息貼上即可 ✨</div>
 
   <script>
     // ===== Supabase Init =====
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ===== Gate Elements =====
-    const gateLogin = document.getElementById('gateLogin');
-    const gateFriend = document.getElementById('gateFriend');
-    const shopWrap = document.getElementById('shopWrap');
-    const shopCta = document.getElementById('shopCta');
-
+    // ===== LIFF Init =====
     async function initLiff(){
       try{
         await liff.init({ liffId: LIFF_ID });
         if(!liff.isLoggedIn()){
-          gateLogin.classList.remove('hide');
+          document.getElementById('gateLogin').classList.remove('hide');
           return;
         }
-        gateLogin.classList.add('hide');
+        document.getElementById('gateLogin').classList.add('hide');
         await checkFriendship();
       }catch(e){
         console.error('LIFF init error', e);
-        if(DEV_MODE){
-          console.warn('DEV_MODE=TRUE → 略過 Gate 僅供預覽');
-          await bootShop();
-          return;
-        }
-        gateLogin.classList.remove('hide');
+        if(DEV_MODE){ await bootShop(); return; }
+        document.getElementById('gateLogin').classList.remove('hide');
       }
     }
 
@@ -272,14 +129,14 @@ orderModal.addEventListener('click', (e) => {
       try{
         const res = await liff.getFriendship();
         if(res.friendFlag){
-          gateFriend.classList.add('hide');
+          document.getElementById('gateFriend').classList.add('hide');
           await bootShop();
         }else{
-          gateFriend.classList.remove('hide');
+          document.getElementById('gateFriend').classList.remove('hide');
         }
       }catch(e){
-        console.warn('getFriendship 需要 LIFF 與 OA 在同一個 Messaging API Channel。', e);
-        gateFriend.classList.remove('hide');
+        console.warn('getFriendship error', e);
+        document.getElementById('gateFriend').classList.remove('hide');
       }
     }
 
@@ -289,152 +146,38 @@ orderModal.addEventListener('click', (e) => {
     document.getElementById('btnAddFriend').setAttribute('href', OA_LINK);
     document.getElementById('btnCheckFriend').addEventListener('click', checkFriendship);
 
-    // ===== 讀取商品（Supabase table: products） =====
-    let PRODUCTS = [];
-
-    async function fetchProductsFromSupabase(){
-      const { data:rows, error } = await sb.from('products')
-        .select('*')
-        .order('created_at', { ascending:false });
-      if(error) throw error;
-      return (rows||[]).map(r=>({
-        id:r.id,
-        name:r.name,
-        price:Number(r.price||0),
-        category:r.category||'',
-        status:r.status||'現貨',
-        eta:r.eta||'',
-        img:r.img_url||'',
-        tags:(r.tags||'').split('|').filter(Boolean)
-      }));
-    }
-
     async function bootShop(){
-      try{
-        PRODUCTS = await fetchProductsFromSupabase();
-      }catch(err){
-        console.error('Load products error:', err);
-        PRODUCTS = [];
-      }
-      filterSort();
-      shopWrap.classList.remove('hide');
-      shopCta.classList.remove('hide');
+      document.getElementById('shopCta').classList.remove('hide');
     }
 
-    // ===== Render =====
-    const elGrid = document.getElementById('grid');
-    const elQ = document.getElementById('q');
-    const elCat = document.getElementById('cat');
-    const elSort = document.getElementById('sort');
-    const toast = document.getElementById('toast');
+    // ===== 彈窗事件 =====
+    const ctaOrder = document.getElementById('ctaOrder');
+    const orderModal = document.getElementById('orderModal');
+    const btnCloseModal = document.getElementById('btnCloseModal');
 
-    function fmt(n){ return Number(n||0).toLocaleString('zh-TW'); }
+    ctaOrder.addEventListener('click', (e) => {
+      e.preventDefault();
+      orderModal.classList.add('show');
+      orderModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    });
 
-    function placeholderEmoji(name){
-      const m=[['包','👜'],['衣','👕'],['妝','💄'],['杯','☕'],['霜','🧴'],['香','🕯️']];
-      for(const [k,e] of m){ if((name||'').includes(k)) return e; }
-      return '🛒'
-    }
+    btnCloseModal.addEventListener('click', () => {
+      orderModal.classList.remove('show');
+      orderModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    });
 
-    function cardTpl(p){
-      const badgeClass = p.status==='現貨' ? 'stock' : 'pre';
-      const badgeText = p.status==='現貨' ? '現貨' : '預購';
-      const tags = (p.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
-      const img = `<img alt="${p.name||''}" src="${p.img||''}">`;
-      return `<article class="card" data-id="${p.id}">
-        <div class="pic">
-          ${img}
-          <div class="badge ${badgeClass}">${badgeText}</div>
-        </div>
-        <div class="meta">
-          <h3>${p.name||''}</h3>
-          <div><span class="price">$${fmt(p.price)}</span><span class="eta">${p.status==='預購' ? '・到貨：'+(p.eta||'依公告') : ''}</span></div>
-          <div class="tags">${tags}</div>
-        </div>
-        <div class="ops">
-          <button class="op" data-op="copy">複製下單</button>
-          <a class="op primary" data-op="dm" href="https://www.threads.com/@yuyu.f86?hl=zh-tw" target="_blank">詢問 / 下單</a>
-        </div>
-      </article>`
-    }
-
-    function render(list){
-      elGrid.innerHTML = list.map(cardTpl).join('');
-      // image fallback
-      elGrid.querySelectorAll('.pic img').forEach(img=>{
-        const name = img.getAttribute('alt')||'';
-        img.onerror = ()=>{
-          const ph = document.createElement('div');
-          ph.style.cssText = 'position:absolute;inset:0;display:grid;place-items:center;color:#9a968b;font-size:34px;';
-          ph.innerHTML = `<div style="text-align:center">${placeholderEmoji(name)}<div style="font-size:12px;margin-top:6px;opacity:.7">(預覽圖待補)</div></div>`;
-          img.replaceWith(ph);
-        }
-      });
-    }
-
-    function filterSort(){
-      const q = (elQ.value||'').trim().toLowerCase();
-      const cat = elCat.value;
-      const s = elSort.value;
-      let list = PRODUCTS.filter(p=>{
-        const hitQ = !q || `${p.id} ${p.name} ${p.category}`.toLowerCase().includes(q);
-        const hitC = !cat || p.category===cat;
-        return hitQ && hitC;
-      });
-      if(s==='low') list.sort((a,b)=>a.price-b.price);
-      else if(s==='high') list.sort((a,b)=>b.price-a.price);
-      render(list);
-    }
-
-    elQ.addEventListener('input', filterSort);
-    elCat.addEventListener('change', filterSort);
-    elSort.addEventListener('change', filterSort);
-
-    // 事件：複製下單格式
-    elGrid.addEventListener('click', e=>{
-      const btn = e.target.closest('[data-op]');
-      if(!btn) return;
-      const op = btn.getAttribute('data-op');
-      const card = btn.closest('.card');
-      const id = card?.getAttribute('data-id');
-      const p = PRODUCTS.find(x=>x.id===id);
-      if(!p) return;
-      if(op==='copy'){
-        const text = `【下單】\n商品：${p.name} (${p.id})\n價格：$${fmt(p.price)}\n數量：1\n規格：\n收件人：\n電話：\n地址：\n備註：`;
-        navigator.clipboard.writeText(text).then(()=>showToast());
+    orderModal.addEventListener('click', (e) => {
+      if (e.target === orderModal) {
+        orderModal.classList.remove('show');
+        orderModal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
       }
     });
 
-    // Sticky CTA copy
-    document.getElementById('ctaCopy').addEventListener('click',()=>{
-      const text = `【下單】\n商品：請填寫商品名稱/編號\n數量：1\n規格：\n收件人：\n電話：\n地址：\n備註：`;
-      navigator.clipboard.writeText(text).then(()=>showToast());
-    });
-
-    function showToast(msg){
-      const toast = document.getElementById('toast');
-      toast.textContent = msg || '已複製，下單訊息貼上即可 ✨';
-      toast.classList.add('show');
-      setTimeout(()=>toast.classList.remove('show'),1400);
-    }
-
-    // 快捷：顯示購買須知
-    document.getElementById('btnPolicy').addEventListener('click',()=>{
-      const det = document.querySelector('footer details');
-      det.open = true;
-      window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
-    });
-
-    // 啟動
-    if(DEV_MODE){
-      // 略過 Gate 預覽商品（開發用）
-      bootShop();
-    }else{
-      initLiff();
-    }
+    // ===== 啟動 =====
+    if(DEV_MODE){ bootShop(); } else { initLiff(); }
   </script>
 </body>
-
 </html>
-
-
