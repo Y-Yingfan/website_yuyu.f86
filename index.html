@@ -10,38 +10,37 @@
   <!-- Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    :root{
-      --bg:#f5f3ef;
-      --panel:#ffffff;
-      --ink:#2f2f2f;
-      --muted:#6b6a62;
-      --line:#e6e2da;
-      --accent:#c2a35d;
-      --shadow:0 10px 28px rgba(0,0,0,.08);
+    /* 基本樣式和變數 */
+    :root {
+      --bg:#f5f3ef; --panel:#ffffff; --ink:#2f2f2f; --muted:#6b6a62; --line:#e6e2da; --accent:#c2a35d; --shadow:0 10px 28px rgba(0,0,0,.08);
     }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif}
-    .gate{max-width:720px;margin:24px auto;padding:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);text-align:center}
-    .gate h2{margin:6px 0 8px}
-    .gate p{color:var(--muted);margin:6px 0}
-    .gate .btns{display:flex;gap:10px;justify-content:center;margin-top:10px}
-    .btn{padding:10px 14px;border:1px solid var(--line);border-radius:999px;background:var(--panel);cursor:pointer}
-    .btn.primary{background:var(--accent);color:#fff;border:none}
-    .hide{display:none}
-    .cta{position:fixed;left:0;right:0;bottom:0;background:#fffaf0;border-top:1px solid var(--line);padding:10px 12px;display:flex;gap:10px;align-items:center;justify-content:center}
-    .cta a{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;color:#2f2f2f;text-decoration:none}
-    .cta a.primary{background:var(--accent);color:#fff;border:none}
-    .toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#111;color:#fff;padding:8px 12px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
-    .toast.show{opacity:1}
-    /* ===== Order Modal ===== */
-    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.35);padding:16px;z-index:999}
-    .modal.show{display:flex}
-    .modal .panel{max-width:420px;width:100%;background:#fff;border-radius:14px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.15)}
-    .modal .panel h3{margin:0 0 6px}
-    .modal .panel p{margin:6px 0 12px;color:var(--muted)}
-    .modal .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
-    .btn.outline{background:#fff;border:1px solid var(--line)}
-    .linkbtn{background:none;border:none;color:var(--muted);margin-top:8px;cursor:pointer}
+    * { box-sizing:border-box }
+    body { margin:0; background:var(--bg); color:var(--ink); font-family:ui-sans-serif,system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif; }
+    .hide { display:none }
+    /* Gate 區塊 */
+    .gate { max-width:720px; margin:24px auto; padding:14px; background:var(--panel); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); text-align:center; }
+    .gate h2 { margin:6px 0 8px }
+    .gate p { color:var(--muted); margin:6px 0 }
+    .gate .btns { display:flex; gap:10px; justify-content:center; margin-top:10px }
+    /* 按鈕 */
+    .btn { padding:10px 14px; border:1px solid var(--line); border-radius:999px; background:var(--panel); cursor:pointer }
+    .btn.primary { background:var(--accent); color:#fff; border:none }
+    /* Sticky CTA */
+    .cta { position:fixed; left:0; right:0; bottom:0; background:#fffaf0; border-top:1px solid var(--line); padding:10px 12px; display:flex; gap:10px; align-items:center; justify-content:center }
+    .cta a { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:999px; border:1px solid var(--line); background:#fff; color:#2f2f2f; text-decoration:none }
+    .cta a.primary { background:var(--accent); color:#fff; border:none }
+    /* 彈窗 */
+    .modal { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.35); padding:16px; z-index:999 }
+    .modal.show { display:flex }
+    .modal .panel { max-width:420px; width:100%; background:#fff; border-radius:14px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.15) }
+    .modal .panel h3 { margin:0 0 6px }
+    .modal .panel p { margin:6px 0 12px; color:var(--muted) }
+    .modal .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px }
+    .btn.outline { background:#fff; border:1px solid var(--line) }
+    .linkbtn { background:none; border:none; color:var(--muted); margin-top:8px; cursor:pointer }
+    /* Toast */
+    .toast { position:fixed; left:50%; bottom:84px; transform:translateX(-50%); background:#111; color:#fff; padding:8px 12px; border-radius:10px; font-size:14px; opacity:0; pointer-events:none; transition:opacity .2s }
+    .toast.show { opacity:1 }
   </style>
 </head>
 <body>
@@ -53,7 +52,7 @@
     const DEV_MODE = false;
   </script>
 
-  <!-- Gate: 1) LINE 登入 -->
+  <!-- Gate: LINE 登入 -->
   <div id="gateLogin" class="gate">
     <h2>登入 LINE 後開始逛</h2>
     <p>為了提供客服與出貨通知，請先以 LINE 登入。</p>
@@ -62,7 +61,7 @@
     </div>
   </div>
 
-  <!-- Gate: 2) 加好友 -->
+  <!-- Gate: 加好友 -->
   <div id="gateFriend" class="gate hide">
     <h2>加入官方帳號後繼續</h2>
     <p>加入好友即可接收訂單進度、補貨通知與優惠。</p>
@@ -87,12 +86,12 @@
         <div>
           <strong>社群</strong>
           <p class="muted">密碼：<b>0628</b></p>
-          <a class="btn outline" href="https://line.me/ti/g2/fRmTHOkmCy8ite62TzDencHTqlruXj6um0DT7g" target="_blank" rel="noopener">前往社群</a>
+          <a class="btn outline" href="https://line.me/ti/g2/fRmTHOkmCy8ite62TzDencHTqlruXj6um0DT7g" target="_blank">前往社群</a>
         </div>
         <div>
           <strong>官方 LINE</strong>
           <p class="muted">加入好友後私訊下單</p>
-          <a class="btn outline" href="https://line.me/R/ti/p/@958xfkot" target="_blank" rel="noopener">加入官方帳號</a>
+          <a class="btn outline" href="https://line.me/R/ti/p/@958xfkot" target="_blank">加入官方帳號</a>
         </div>
       </div>
       <button class="linkbtn" id="btnCloseModal">關閉</button>
@@ -103,7 +102,6 @@
 
   <script>
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
     async function initLiff(){
       try{
         await liff.init({ liffId: LIFF_ID });
@@ -119,7 +117,6 @@
         document.getElementById('gateLogin').classList.remove('hide');
       }
     }
-
     async function checkFriendship(){
       try{
         const res = await liff.getFriendship();
@@ -134,56 +131,19 @@
         document.getElementById('gateFriend').classList.remove('hide');
       }
     }
-
-    document.getElementById('btnLineLogin').addEventListener('click',()=>{
-      if(!liff.isLoggedIn()) liff.login();
-    });
+    document.getElementById('btnLineLogin').addEventListener('click',()=>{ if(!liff.isLoggedIn()) liff.login(); });
     document.getElementById('btnAddFriend').setAttribute('href', OA_LINK);
     document.getElementById('btnCheckFriend').addEventListener('click', checkFriendship);
-
-    function bootShop(){
-      document.getElementById('shopCta').classList.remove('hide');
-    }
-
+    function bootShop(){ document.getElementById('shopCta').classList.remove('hide'); }
     // 彈窗事件
     const ctaOrder = document.getElementById('ctaOrder');
     const orderModal = document.getElementById('orderModal');
     const btnCloseModal = document.getElementById('btnCloseModal');
-
-    ctaOrder.addEventListener('click', (e) => {
-      e.preventDefault();
-      orderModal.classList.add('show');
-      orderModal.setAttribute('aria-hidden', 'false');
-      document.body.style.overflow = 'hidden';
-    });
-
-    btnCloseModal.addEventListener('click', () => {
-      orderModal.classList.remove('show');
-      orderModal.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
-    });
-
-    orderModal.addEventListener('click', (e) => {
-      if (e.target === orderModal) {
-        orderModal.classList.remove('show');
-        orderModal.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = '';
-      }
-    });
-
-    // 複製格式
-    document.getElementById('ctaCopy').addEventListener('click',()=>{
-      const text = `【下單】\n商品：請填寫商品名稱/編號\n數量：1\n規格：\n收件人：\n電話：\n地址：\n備註：`;
-      navigator.clipboard.writeText(text).then(()=>showToast());
-    });
-
-    function showToast(msg){
-      const toast = document.getElementById('toast');
-      toast.textContent = msg || '已複製，下單訊息貼上即可 ✨';
-      toast.classList.add('show');
-      setTimeout(()=>toast.classList.remove('show'),1400);
-    }
-
+    ctaOrder.addEventListener('click', (e) => { e.preventDefault(); orderModal.classList.add('show'); orderModal.setAttribute('aria-hidden', 'false'); document.body.style.overflow = 'hidden'; });
+    btnCloseModal.addEventListener('click', () => { orderModal.classList.remove('show'); orderModal.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; });
+    orderModal.addEventListener('click', (e) => { if (e.target === orderModal) { orderModal.classList.remove('show'); orderModal.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; } });
+    document.getElementById('ctaCopy').addEventListener('click',()=>{ const text = `【下單】\n商品：請填寫商品名稱/編號\n數量：1\n規格：\n收件人：\n電話：\n地址：\n備註：`; navigator.clipboard.writeText(text).then(()=>showToast()); });
+    function showToast(msg){ const toast = document.getElementById('toast'); toast.textContent = msg || '已複製，下單訊息貼上即可 ✨'; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),1400); }
     if(DEV_MODE){ bootShop(); } else { initLiff(); }
   </script>
 </body>
