@@ -94,6 +94,9 @@
     .modal .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
     .btn.outline{background:#fff;border:1px solid var(--line)}
     .linkbtn{background:none;border:none;color:var(--muted);margin-top:8px;cursor:pointer}
+
+    /* 小小 Debug 區（只在錯誤時顯示） */
+    .debug{max-width:720px;margin:12px auto;padding:10px;border-radius:10px;background:#fff3cd;border:1px solid #ffe69c;color:#664d03;font-size:13px}
   </style>
 </head>
 <body>
@@ -207,6 +210,9 @@
   </div>
   <!-- ===== 彈窗（Pop-up）結束 ===== -->
 
+  <!-- Debug 區 -->
+  <div id="debug" class="debug hide"></div>
+
   <div class="toast" id="toast">已複製，下單訊息貼上即可 ✨</div>
 
   <script>
@@ -218,6 +224,12 @@
     const gateFriend = document.getElementById('gateFriend');
     const shopWrap = document.getElementById('shopWrap');
     const shopCta = document.getElementById('shopCta');
+    const debugBox = document.getElementById('debug');
+
+    function showDebug(msg){
+      debugBox.innerText = msg;
+      debugBox.classList.remove('hide');
+    }
 
     async function initLiff(){
       try{
@@ -230,6 +242,7 @@
         await checkFriendship();
       }catch(e){
         console.error('LIFF init error', e);
+        showDebug('LIFF 初始化失敗：'+ (e?.message||e));
         if(DEV_MODE){
           console.warn('DEV_MODE=TRUE → 略過 Gate 僅供預覽');
           await bootShop();
@@ -249,7 +262,8 @@
           gateFriend.classList.remove('hide');
         }
       }catch(e){
-        console.warn('getFriendship 需要 LIFF 與 OA 在同一個 Messaging API Channel。', e);
+        console.warn('getFriendship 需要 Login channel 連結 Bot。', e);
+        showDebug('好友狀態檢查失敗（請確認 Login channel 已 Link a bot）：'+(e?.message||e));
         gateFriend.classList.remove('hide');
       }
     }
@@ -281,15 +295,20 @@
     }
 
     async function bootShop(){
+      // 先顯示框架，避免空白
+      shopWrap.classList.remove('hide');
+      shopCta.classList.remove('hide');
       try{
         PRODUCTS = await fetchProductsFromSupabase();
+        if(!PRODUCTS.length){
+          showDebug('目前沒有商品可顯示（或讀取不到資料）。若你已在 Admin 新增，請檢查 Supabase URL/Key 與 RLS 設定。');
+        }
       }catch(err){
         console.error('Load products error:', err);
+        showDebug('讀取商品失敗：'+ (err?.message||err));
         PRODUCTS = [];
       }
       filterSort();
-      shopWrap.classList.remove('hide');
-      shopCta.classList.remove('hide');
     }
 
     // ===== Render =====
@@ -310,7 +329,7 @@
       const badgeClass = p.status==='現貨' ? 'stock' : 'pre';
       const badgeText = p.status==='現貨' ? '現貨' : '預購';
       const tags = (p.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
-      const img = `<img alt="${p.name||''}" src="${p.img||''}">`;
+      const img = p.img ? `<img alt="${p.name||''}" src="${p.img}">` : `<img alt="${p.name||''}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==">`;
       return `<article class="card" data-id="${p.id}">
         <div class="pic">
           ${img}
@@ -329,6 +348,10 @@
     }
 
     function render(list){
+      if(!list.length){
+        elGrid.innerHTML = `<div class="ann" style="grid-column:1/-1">目前沒有可顯示的商品。若你剛新增，請重整或稍後再試。</div>`;
+        return;
+      }
       elGrid.innerHTML = list.map(cardTpl).join('');
       // image fallback
       elGrid.querySelectorAll('.pic img').forEach(img=>{
@@ -403,7 +426,6 @@
     }
 
     // 卡片內按鈕
-    const elGrid = document.getElementById('grid');
     elGrid.addEventListener('click', e=>{
       const btn = e.target.closest('[data-op]');
       if(!btn) return;
