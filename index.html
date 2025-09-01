@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="robots" content="noindex,nofollow" />
-  <title>Yuyu 代購｜Select Shop</title>
+  <title>旅游人生選務代購｜Select Shop</title>
   <!-- LINE LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <!-- Supabase JS SDK -->
@@ -82,6 +82,19 @@
     .gate p{color:var(--muted);margin:6px 0}
     .gate .btns{display:flex;gap:10px;justify-content:center;margin-top:10px}
     .hide{display:none}
+
+    /* ===== Order Modal ===== */
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.35);padding:16px;z-index:999}
+.modal.show{display:flex}
+.modal .panel{max-width:420px;width:100%;background:#fff;border-radius:14px;
+  padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+.modal .panel h3{margin:0 0 6px}
+.modal .panel p{margin:6px 0 12px;color:var(--muted)}
+.modal .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.btn.outline{background:#fff;border:1px solid var(--line)}
+.linkbtn{background:none;border:none;color:var(--muted);margin-top:8px;cursor:pointer}
+
   </style>
 </head>
 <body>
@@ -94,6 +107,35 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';                // Supabase Publishable / anon key
     const DEV_MODE = false; // ← 如需暫時略過 LINE Gate 以預覽商品，改成 true
   </script>
+
+  <script>
+  // === 彈窗開關 ===
+  const ctaOrder = document.getElementById('ctaOrder');
+  const orderModal = document.getElementById('orderModal');
+  const btnCloseModal = document.getElementById('btnCloseModal');
+
+  ctaOrder?.addEventListener('click', (e) => {
+    e.preventDefault(); // 不要跳連結
+    orderModal.classList.add('show'); // 顯示彈窗
+    orderModal.setAttribute('aria-hidden', 'false'); // 無障礙：打開時標記可見
+    document.body.style.overflow = 'hidden'; // 鎖住背景捲動
+});
+
+btnCloseModal?.addEventListener('click', () => {
+    orderModal.classList.remove('show');
+    orderModal.setAttribute('aria-hidden', 'true'); // 無障礙：關閉時標記隱藏
+    document.body.style.overflow = ''; // 恢復背景捲動
+});
+
+// 點背景也關閉
+orderModal.addEventListener('click', (e) => {
+    if (e.target === orderModal) {
+        orderModal.classList.remove('show');
+        orderModal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+});
+</script>
 
   <!-- Gate: 1) LINE 登入 2) 加好友 3) 顯示商店 -->
   <div id="gateLogin" class="gate">
@@ -112,17 +154,41 @@
     </div>
   </div>
 
-  <div class="wrap hide" id="shopWrap">
-    <div class="topbar">
-      <div class="brand">
-        <div class="logo"><span>🛍️</span></div>
-        <h1>Yuyu 代購｜Select Shop</h1>
+<div class="cta" id="shopCta">
+  <!-- 這顆按鈕改為打開彈窗 -->
+  <a class="primary" id="ctaOrder" href="#">立即私訊下單</a>
+  <a id="ctaCopy">複製下單格式</a>
+</div>
+
+<!-- ===== 彈窗（Pop-up）開始 ===== -->
+<div class="modal" id="orderModal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="panel">
+    <h3>選擇聯絡方式</h3>
+    <p>下單系統還在開發中，要麻煩先用社群或是官方line私訊我 🧡</p>
+
+    <div class="grid2">
+      <!-- 社群 -->
+      <div>
+        <strong>社群</strong>
+        <p class="muted">密碼：<b>0628</b></p>
+        <a class="btn outline" id="btnCommunity"
+           href="https://line.me/ti/g2/fRmTHOkmCy8ite62TzDencHTqlruXj6um0DT7g?utm_source=invitation&utm_medium=link_copy&utm_campaign=default" target="_blank" rel="noopener">前往社群</a>
       </div>
-      <div class="actions">
-        <button class="btn" id="btnPolicy">購買須知</button>
-        <a class="btn primary" href="https://www.threads.com/@yuyu.f86?hl=zh-tw" target="_blank">私訊我下單</a>
+
+      <!-- 官方 LINE -->
+      <div>
+        <strong>官方 LINE</strong>
+        <p class="muted">加入好友後私訊下單</p>
+        <a class="btn outline" id="btnOA"
+           href="https://line.me/R/ti/p/@958xfkot" target="_blank" rel="noopener">加入官方帳號</a>
       </div>
     </div>
+
+    <button class="linkbtn" id="btnCloseModal">關閉</button>
+  </div>
+</div>
+<!-- ===== 彈窗（Pop-up）結束 ===== -->
+
 
     <div class="ann" id="announce">📣 本週上新：香氛擴香、藥妝補貨、MUJI 熱銷補單</div>
 
@@ -370,4 +436,5 @@
 </body>
 
 </html>
+
 
