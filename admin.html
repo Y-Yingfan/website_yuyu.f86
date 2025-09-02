@@ -5,163 +5,164 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>後台｜連線與商品管理</title>
 <style>
-  :root{
-    --bg:#f7f3ef; --paper:#fffdf9; --card:#ffffff; --ink:#2b2b2b; --muted:#7a7267;
-    --brand:#8B5E34; --border:#eadfcd; --shadow:0 10px 28px rgba(139,94,52,.08); --r:14px;
-  }
+  :root{--bg:#f7f3ef;--paper:#fffdf9;--card:#fff;--ink:#2b2b2b;--muted:#7a7267;--brand:#8B5E34;--border:#eadfcd;--shadow:0 10px 28px rgba(139,94,52,.08);--r:14px;}
   *{box-sizing:border-box}
-  body{margin:0;background:linear-gradient(180deg,#f8f5f1 0%, var(--bg) 100%);color:var(--ink);
-       font-family:ui-sans-serif,system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",Arial;}
+  body{margin:0;background:linear-gradient(180deg,#f8f5f1 0%, var(--bg) 100%);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",Arial}
   header{position:sticky;top:0;background:rgba(247,243,239,.8);backdrop-filter:blur(6px);border-bottom:1px solid var(--border)}
   .wrap{max-width:1100px;margin:0 auto;padding:14px 16px}
   h1{margin:0;font-size:20px}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
-  @media (max-width:980px){.grid{grid-template-columns:1fr}}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);padding:14px}
-  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);padding:14px;margin-top:14px}
   input,select,textarea,button{font:inherit}
   input,select,textarea{padding:9px 10px;border:1px solid var(--border);border-radius:10px;background:#fffdfa}
   button{padding:10px 14px;border:none;border-radius:10px;background:var(--brand);color:#fff;cursor:pointer}
   button.ghost{background:#f3ede4;color:#2b2b2b}
-  button.line{background:#00B900}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   table{width:100%;border-collapse:collapse}
   th,td{border-bottom:1px solid var(--border);padding:8px 6px;text-align:left;vertical-align:top}
   .muted{color:var(--muted)}
   .badge{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px}
-  .actions{display:flex;gap:6px;flex-wrap:wrap}
-  .help{font-size:12px;color:var(--muted)}
+  .tabs{display:flex;gap:8px}
+  .tab{padding:10px 14px;border:1px solid var(--border);border-bottom:none;border-top-left-radius:10px;border-top-right-radius:10px;background:#fffdf9;cursor:pointer}
+  .tab.active{background:#fff}
+  .pane{display:none}
+  .pane.active{display:block}
   .hr{height:1px;background:var(--border);margin:10px 0}
 </style>
 </head>
 <body>
-<header>
-  <div class="wrap row">
-    <h1>後台｜連線與商品管理</h1>
-    <div class="muted">Supabase</div>
-  </div>
-</header>
-
+<header><div class="wrap row"><h1>後台｜連線與商品管理</h1><div class="muted">Supabase</div></div></header>
 <main class="wrap">
-  <div class="grid">
-    <!-- 連線管理 -->
-    <section class="card">
-      <h2 style="margin:0 0 8px">連線管理</h2>
+  <div class="tabs">
+    <div class="tab active" data-pane="runsPane">Runs</div>
+    <div class="tab" data-pane="productsPane">Products</div>
+    <div class="tab" data-pane="bulkPane">Bulk Move</div>
+    <div class="tab" data-pane="settingsPane">Settings</div>
+  </div>
 
+  <!-- Runs -->
+  <section id="runsPane" class="pane active">
+    <div class="card">
+      <h2 style="margin:0 0 8px">新增連線</h2>
       <div class="row" style="margin-bottom:8px">
-        <select id="region">
-          <option value="JP">日本 JP</option>
-          <option value="KR">韓國 KR</option>
-          <option value="TW">台灣 TW</option>
-          <option value="OTHER">其他</option>
-        </select>
-        <input id="title" placeholder="標題（例：日本 9/6–9/7）" style="flex:1" />
+        <select id="region"><option value="JP">日本 JP</option><option value="KR">韓國 KR</option><option value="TW">台灣 TW</option><option value="OTHER">其他</option></select>
+        <input id="title" placeholder="標題（例：日本 9/26–9/28）" style="flex:1" />
       </div>
       <div class="row" style="margin-bottom:8px">
-        <input id="start" type="date" />
-        <input id="end" type="date" />
+        <input id="start" type="date" /><input id="end" type="date" />
+        <input id="ship_start" type="date" placeholder="寄送起始日" />
         <input id="code" placeholder="代碼（可留空自動）" />
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <input id="ship_note" placeholder="寄送備註（例：依序出貨）" style="flex:1" />
+        <input id="note" placeholder="備註（選填）" style="flex:1" />
         <button id="btnCreateRun">新增連線</button>
       </div>
+    </div>
 
-      <h3 style="margin:10px 0 6px">所有連線</h3>
+    <div class="card">
+      <h2 style="margin:0 0 8px">所有連線</h2>
       <table>
         <thead>
-          <tr><th style="width:26%">標題／代碼</th><th style="width:8%">區域</th><th style="width:22%">日期</th><th>備註</th><th style="width:8%">狀態</th><th style="width:8%">首頁</th><th style="width:20%">動作</th></tr>
+          <tr><th style="width:24%">標題／代碼</th><th style="width:8%">區域</th><th style="width:22%">日期</th><th style="width:18%">寄送</th><th>備註</th><th style="width:8%">狀態</th><th style="width:8%">首頁</th><th style="width:18%">動作</th></tr>
         </thead>
         <tbody id="runsTbody"></tbody>
       </table>
-    </section>
+    </div>
+  </section>
 
-    <!-- 批次搬家 + 新增商品 -->
-    <section class="card">
-      <h2 style="margin:0 0 8px">批次搬到另一個連線</h2>
-      <div class="row" style="margin-bottom:8px">
-        <input id="pSearch" placeholder="搜尋商品名稱/關鍵字…" style="flex:1" />
-        <button class="ghost" id="btnSelectAll">全選</button>
-        <button class="ghost" id="btnSelectNone">全不選</button>
-        <button class="ghost" id="btnSelectInvert">反選</button>
-      </div>
-      <div class="row" style="margin-bottom:8px">
-        <select id="targetRun"></select>
-        <button id="btnMove">搬家（取代）</button>
-        <button class="ghost" id="btnAdd">加入（合併）</button>
-        <span class="muted" id="selCount">已選 0 項</span>
-      </div>
-      <div style="max-height:360px;overflow:auto;border:1px solid var(--border);border-radius:10px">
-        <table>
-          <thead>
-            <tr><th style="width:36px"></th><th>名稱</th><th>分類</th><th>價格</th><th class="muted">目前連線</th></tr>
-          </thead>
-          <tbody id="productsTbody"></tbody>
-        </table>
-      </div>
-
-      <div class="hr"></div>
-
-      <h2 style="margin:8px 0 6px">新增商品</h2>
-      <div class="help">可貼圖連結（img_url），或上傳 1 張圖片到 Storage（自動寫 images[0] 與 img_url）。</div>
-      <div class="row" style="margin-top:6px">
-        <input id="f_name" placeholder="名稱" style="flex:2" />
-        <input id="f_price" type="number" placeholder="價格" style="width:140px" />
-        <input id="f_category" placeholder="分類（例：香氛）" style="flex:1" />
+  <!-- Products -->
+  <section id="productsPane" class="pane">
+    <div class="card">
+      <h2 style="margin:0 0 8px">新增商品</h2>
+      <div class="row">
+        <input id="p_name" placeholder="名稱" style="flex:2" />
+        <input id="p_price" type="number" placeholder="售價（NT$）" style="width:160px" />
+        <input id="p_cost" type="number" placeholder="日幣成本（JPY）" style="width:180px" />
       </div>
       <div class="row" style="margin-top:6px">
-        <select id="f_status">
-          <option value="">狀態（可空）</option>
-          <option value="現貨">現貨</option>
-          <option value="預購">預購</option>
-          <option value="完售">完售</option>
-        </select>
-        <input id="f_arrival" placeholder="到貨（例：9/10 依序出貨）" style="flex:1" />
-        <input id="f_eta" placeholder="備註 / 補充文字" style="flex:2" />
+        <input id="p_category" list="catList" placeholder="分類（可下拉或自填）" style="flex:1" />
+        <datalist id="catList"></datalist>
+        <select id="p_status"><option value="">狀態（可空）</option><option value="現貨">現貨</option><option value="預購">預購</option><option value="完售">完售</option></select>
+        <input id="p_arrival" placeholder="到貨（例：9/10 依序出貨）" style="flex:2" />
       </div>
       <div class="row" style="margin-top:6px">
-        <input id="f_img_url" placeholder="圖片網址（可空，如果要上傳請用右邊）" style="flex:2" />
-        <input id="f_tags" placeholder="標籤（逗號分隔）" style="flex:1" />
-        <input id="f_file" type="file" accept="image/*" />
+        <select id="p_runForArrival"><option value="">帶入到貨：選擇連線（取寄送日期/備註）</option></select>
+        <button class="ghost" id="btnFillArrival">帶入</button>
+        <input id="p_eta" placeholder="備註 / 補充文字" style="flex:1" />
+      </div>
+      <div class="row" style="margin-top:6px">
+        <input id="p_img_url" placeholder="圖片網址（可空，如果要上傳請用右邊）" style="flex:2" />
+        <input id="p_tags" placeholder="標籤（逗號分隔）" style="flex:1" />
+        <input id="p_file" type="file" accept="image/*" />
       </div>
       <div class="row" style="margin-top:8px">
         <button id="btnCreateProduct">新增商品</button>
-        <span id="createInfo" class="help"></span>
+        <span id="p_msg" class="muted"></span>
       </div>
-    </section>
-  </div>
+    </div>
+  </section>
+
+  <!-- Bulk Move -->
+  <section id="bulkPane" class="pane">
+    <div class="card">
+      <h2 style="margin:0 0 8px">批次搬到另一個連線</h2>
+      <div class="row" style="margin-bottom:8px">
+        <input id="q" placeholder="搜尋商品…" style="flex:1" />
+        <button class="ghost" id="selAll">全選</button><button class="ghost" id="selNone">全不選</button><button class="ghost" id="selInv">反選</button>
+      </div>
+      <div class="row" style="margin-bottom:8px">
+        <select id="targetRun"></select><button id="btnMove">搬家（取代）</button><button class="ghost" id="btnAdd">加入（合併）</button>
+        <span id="selCount" class="muted">已選 0 項</span>
+      </div>
+      <div style="max-height:380px;overflow:auto;border:1px solid var(--border);border-radius:10px">
+        <table>
+          <thead><tr><th style="width:34px"></th><th>名稱</th><th>分類</th><th>售價</th><th class="muted">目前連線</th></tr></thead>
+          <tbody id="productsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Settings -->
+  <section id="settingsPane" class="pane">
+    <div class="card">
+      <h2 style="margin:0 0 8px">首頁公告</h2>
+      <textarea id="homeNotice" rows="3" style="width:100%"></textarea>
+      <div class="row" style="margin-top:8px"><button id="btnSaveNotice">儲存公告</button><span id="noticeSaved" class="muted"></span></div>
+    </div>
+  </section>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ===== Supabase config ===== */
 const supabaseUrl = 'https://llbpmqyjigovxixeohzr.supabase.co';
 const supabaseKey = 'sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';
 const BUCKET = 'yuyu.f86';
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-let runs = [];
-let products = [];
-let prodRunMap = new Map(); // product_id -> [run titles]
-let selectedIds = new Set();
+const $ = id => document.getElementById(id);
+function uuid4(){ return crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+'-'+Math.random().toString(16).slice(2); }
 
-/* ===== Tools ===== */
-const el = id => document.getElementById(id);
-function fmtDate(d){ return d ? String(d) : ''; }
-function uuid4(){ return crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + '-' + Math.random().toString(16).slice(2); }
+let runs=[], products=[], prodRunMap=new Map(), selected=new Set(), CATS=[];
 
-/* ===== Runs: list & edit ===== */
+/* ---------- Tabs ---------- */
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
+                  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active')); $(t.dataset.pane).classList.add('active'); };
+});
+
+/* ---------- Runs ---------- */
 async function loadRuns(){
-  const { data, error } = await supabaseClient
-    .from('runs')
-    .select('id, code, title, region, start_date, end_date, note, is_active, is_featured')
-    .order('start_date', { ascending:false });
-  if(error){ console.error(error); return; }
-  runs = data || [];
-  renderRuns();
-  fillTargetRun();
+  const { data } = await supabaseClient.from('runs')
+    .select('id, code, title, region, start_date, end_date, ship_start_date, ship_note, note, is_active, is_featured')
+    .order('start_date',{ascending:false});
+  runs = data||[]; renderRuns(); fillRunDropdowns();
 }
 function renderRuns(){
-  const tb = el('runsTbody'); tb.innerHTML = '';
+  const tb=$('runsTbody'); tb.innerHTML='';
   runs.forEach(r=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
       <td>
         <input class="inp" data-k="title" data-id="${r.id}" value="${r.title||''}" style="width:100%;margin-bottom:6px" />
         <div class="row"><input class="inp" data-k="code" data-id="${r.id}" value="${r.code||''}" placeholder="代碼" style="flex:1" /></div>
@@ -171,245 +172,140 @@ function renderRuns(){
           ${['JP','KR','TW','OTHER'].map(x=>`<option value="${x}" ${r.region===x?'selected':''}>${x}</option>`).join('')}
         </select>
       </td>
-      <td>
-        <div class="row"><input type="date" class="inp" data-k="start_date" data-id="${r.id}" value="${fmtDate(r.start_date)}" />
-        <input type="date" class="inp" data-k="end_date" data-id="${r.id}" value="${fmtDate(r.end_date)}" /></div>
-      </td>
-      <td>
-        <textarea class="inp" data-k="note" data-id="${r.id}" rows="2" style="width:100%">${r.note||''}</textarea>
-      </td>
-      <td>
-        <label class="badge"><input type="checkbox" class="chk" data-k="is_active" data-id="${r.id}" ${r.is_active?'checked':''}> 啟用</label>
-      </td>
-      <td>
-        <label class="badge"><input type="checkbox" class="chk" data-k="is_featured" data-id="${r.id}" ${r.is_featured?'checked':''}> 首頁</label>
-      </td>
-      <td class="actions">
-        <button class="ghost" data-save="${r.id}">儲存</button>
-        <button class="ghost" data-reset="${r.id}">還原</button>
-        <button class="ghost" data-del="${r.id}">刪除</button>
-      </td>
-    `;
+      <td><div class="row"><input type="date" class="inp" data-k="start_date" data-id="${r.id}" value="${r.start_date||''}" />
+              <input type="date" class="inp" data-k="end_date" data-id="${r.id}" value="${r.end_date||''}" /></div></td>
+      <td><div class="row"><input type="date" class="inp" data-k="ship_start_date" data-id="${r.id}" value="${r.ship_start_date||''}" />
+              <input class="inp" data-k="ship_note" data-id="${r.id}" value="${r.ship_note||''}" placeholder="寄送備註" /></div></td>
+      <td><textarea class="inp" data-k="note" data-id="${r.id}" rows="2" style="width:100%">${r.note||''}</textarea></td>
+      <td><label class="badge"><input type="checkbox" class="chk" data-k="is_active" data-id="${r.id}" ${r.is_active?'checked':''}> 啟用</label></td>
+      <td><label class="badge"><input type="checkbox" class="chk" data-k="is_featured" data-id="${r.id}" ${r.is_featured?'checked':''}> 首頁</label></td>
+      <td><button class="ghost" data-save="${r.id}">儲存</button><button class="ghost" data-reset="${r.id}">還原</button><button class="ghost" data-del="${r.id}">刪除</button></td>`;
     tb.appendChild(tr);
   });
-
-  // 儲存 / 還原 / 刪除
-  tb.querySelectorAll('button[data-save]').forEach(btn=>{
-    btn.onclick = async ()=>{
-      const id = btn.getAttribute('data-save');
-      const patch = collectRowPatch(id);
-      const { error } = await supabaseClient.from('runs').update(patch).eq('id', id);
-      if(error) return alert('更新失敗：'+error.message);
-      await loadRuns();
-      await refreshProductRunMap(); renderProducts();
-      alert('已更新');
-    };
-  });
-  tb.querySelectorAll('button[data-reset]').forEach(btn=>{
-    btn.onclick = ()=> loadRuns();
-  });
-  tb.querySelectorAll('button[data-del]').forEach(btn=>{
-    btn.onclick = async ()=>{
-      if(!confirm('確定刪除此連線？（僅刪連線與關聯，不會刪商品）')) return;
-      const id = btn.getAttribute('data-del');
-      await supabaseClient.from('runs').delete().eq('id', id);
-      await loadRuns();
-      await refreshProductRunMap(); renderProducts();
-    };
-  });
+  tb.querySelectorAll('button[data-save]').forEach(b=>b.onclick=()=>saveRun(b.dataset.save));
+  tb.querySelectorAll('button[data-reset]').forEach(b=>b.onclick=loadRuns);
+  tb.querySelectorAll('button[data-del]').forEach(b=>b.onclick=async()=>{ if(confirm('刪除此連線？（不刪商品）')){ await supabaseClient.from('runs').delete().eq('id',b.dataset.del); await loadRuns(); await mapProductRuns(); }});
 }
-function collectRowPatch(id){
-  const get = (sel)=> document.querySelector(`${sel}[data-id="${id}"]`);
-  const patch = {};
-  ['title','code','region','start_date','end_date','note'].forEach(k=>{
-    const inp = get(`.inp[data-k="${k}"]`);
-    if(!inp) return;
-    patch[k] = inp.value || null;
-  });
-  ['is_active','is_featured'].forEach(k=>{
-    const chk = get(`.chk[data-k="${k}"]`);
-    patch[k] = !!chk?.checked;
-  });
-  return patch;
+function patchOfRow(id){
+  const sel=(q)=>document.querySelector(`${q}[data-id="${id}"]`);
+  const p={}; ['title','code','region','start_date','end_date','ship_start_date','ship_note','note'].forEach(k=>{const n=sel(`.inp[data-k="${k}"]`); p[k]=n?.value||null;});
+  ['is_active','is_featured'].forEach(k=>{const c=sel(`.chk[data-k="${k}"]`); p[k]=!!c?.checked;});
+  return p;
 }
-function fillTargetRun(){
-  const sel = el('targetRun'); sel.innerHTML = '';
-  runs.filter(r=>r.is_active).forEach(r=>{
-    const opt = document.createElement('option');
-    opt.value = r.id; opt.textContent = r.title || r.code || r.region;
-    sel.appendChild(opt);
-  });
+async function saveRun(id){
+  const patch=patchOfRow(id);
+  const { error } = await supabaseClient.from('runs').update(patch).eq('id',id);
+  if(error) alert('更新失敗：'+error.message); else { await loadRuns(); await mapProductRuns(); alert('已更新'); }
 }
-
-el('btnCreateRun').onclick = async ()=>{
-  const region = el('region').value;
-  const title  = el('title').value.trim();
-  const start  = el('start').value || null;
-  const end    = el('end').value || null;
-  let code     = el('code').value.trim();
-  if(!title){ alert('請輸入標題'); return; }
-  if(!code){
-    const d = start || new Date().toISOString().slice(0,10).replace(/-/g,'');
-    code = `${region}-${d}`;
-  }
-  const { error } = await supabaseClient.from('runs')
-    .insert([{ region, title, start_date:start, end_date:end, code, is_active:true }]);
-  if(error){ alert('新增失敗：'+error.message); return; }
-  el('title').value = ''; el('code').value = '';
-  await loadRuns();
+$('btnCreateRun').onclick=async()=>{
+  const region=$('region').value, title=$('title').value.trim(); if(!title){alert('請輸入標題');return;}
+  const start=$('start').value||null, end=$('end').value||null, ship_start=$('ship_start').value||null;
+  const ship_note=$('ship_note').value||null, note=$('note').value||null;
+  let code=$('code').value.trim(); if(!code){ const d=(start||new Date().toISOString().slice(0,10)).replace(/-/g,''); code=`${region}-${d}`;}
+  const { error } = await supabaseClient.from('runs').insert({region,title,start_date:start,end_date:end,ship_start_date:ship_start,ship_note,note,code,is_active:true});
+  if(error) alert('新增失敗：'+error.message); else { ['title','start','end','ship_start','ship_note','code','note'].forEach(id=>$(id).value=''); await loadRuns(); }
 };
+function fillRunDropdowns(){
+  const sel1=$('p_runForArrival'); sel1.innerHTML='<option value="">帶入到貨：選擇連線（取寄送日期/備註）</option>';
+  const sel2=$('targetRun'); sel2.innerHTML='';
+  runs.forEach(r=>{
+    const t=r.title||r.code||r.region, v=r.id;
+    const o1=document.createElement('option'); o1.value=v; o1.textContent=t; sel1.appendChild(o1);
+    if(r.is_active){ const o2=document.createElement('option'); o2.value=v; o2.textContent=t; sel2.appendChild(o2); }
+  });
+}
 
-/* ===== Products & selections ===== */
-async function loadProducts(){
-  const { data, error } = await supabaseClient
-    .from('products')
-    .select('id, name, price, category')
-    .order('created_at', { ascending:false });
-  if(error){ console.error(error); return; }
-  products = data || [];
-  await refreshProductRunMap();
-  renderProducts();
+/* ---------- Products: create with category datalist & JPY cost ---------- */
+async function loadCats(){
+  // 從 options.json + 現有商品 取聯集
+  const list=new Set();
+  try{
+    const { data, error } = await supabaseClient.storage.from('yuyu.f86').download('admin/options.json');
+    if(!error && data){ const json=JSON.parse(await data.text()); (json.categories||[]).forEach(c=>list.add(c)); }
+  }catch(_){}
+  const { data: prod } = await supabaseClient.from('products').select('category').not('category','is',null);
+  (prod||[]).forEach(p=>list.add(p.category));
+  CATS=[...list].filter(Boolean).sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+  const dl=$('catList'); dl.innerHTML=''; CATS.forEach(c=>{ const o=document.createElement('option'); o.value=c; dl.appendChild(o); });
 }
-async function refreshProductRunMap(){
-  prodRunMap = new Map();
-  const { data, error } = await supabaseClient
-    .from('product_runs').select('product_id, run_id');
-  if(error){ console.error(error); return; }
-  const mapRunTitle = new Map(runs.map(r=>[r.id, r.title || r.code || r.region]));
-  (data||[]).forEach(pr=>{
-    const arr = prodRunMap.get(pr.product_id) || [];
-    arr.push(mapRunTitle.get(pr.run_id) || pr.run_id);
-    prodRunMap.set(pr.product_id, arr);
-  });
-}
-function renderProducts(){
-  const q = (el('pSearch').value||'').toLowerCase();
-  const tb = el('productsTbody'); tb.innerHTML='';
-  const list = products.filter(p=>{
-    return !q || `${p.name||''} ${p.category||''}`.toLowerCase().includes(q);
-  });
-  list.forEach(p=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><input type="checkbox" data-id="${p.id}" ${selectedIds.has(p.id)?'checked':''}></td>
-      <td>${p.name||''}</td>
-      <td>${p.category||''}</td>
-      <td>${p.price||''}</td>
-      <td class="muted">${(prodRunMap.get(p.id)||[]).join('、')}</td>
-    `;
-    tb.appendChild(tr);
-  });
-  tb.querySelectorAll('input[type="checkbox"]').forEach(ch=>{
-    ch.onchange = ()=>{ 
-      const id = ch.getAttribute('data-id');
-      if(ch.checked) selectedIds.add(id); else selectedIds.delete(id);
-      updateSelCount();
-    };
-  });
-  updateSelCount();
-}
-function updateSelCount(){
-  el('selCount').textContent = `已選 ${selectedIds.size} 項`;
-}
-el('pSearch').oninput = ()=> renderProducts();
-el('btnSelectAll').onclick = ()=>{ products.forEach(p=>selectedIds.add(p.id)); renderProducts(); };
-el('btnSelectNone').onclick = ()=>{ selectedIds.clear(); renderProducts(); };
-el('btnSelectInvert').onclick = ()=>{
-  const now = new Set(selectedIds);
-  products.forEach(p=>{ if(now.has(p.id)) selectedIds.delete(p.id); else selectedIds.add(p.id); });
-  renderProducts();
+$('btnFillArrival').onclick=()=>{
+  const id=$('p_runForArrival').value; if(!id) return;
+  const r=runs.find(x=>x.id===id); if(!r) return;
+  const date=r?.ship_start_date? String(r.ship_start_date).replace(/^(\d{4})-(\d{2})-(\d{2})$/,'$2/$3') : '';
+  $('p_arrival').value = date ? `${date} ${r.ship_note||''}`.trim() : (r.ship_note||'');
 };
-
-/* ===== Bulk actions ===== */
-async function bulkAdd(runId, ids){
-  if(!ids.length) return;
-  const rows = ids.map(pid=>({ product_id: pid, run_id: runId }));
-  const { error } = await supabaseClient.from('product_runs')
-    .upsert(rows, { onConflict: 'product_id,run_id' });
+async function upload(file){
+  const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+  const path=`products/${new Date().toISOString().slice(0,10)}/${uuid4()}.${ext}`;
+  const { error } = await supabaseClient.storage.from(BUCKET).upload(path,file,{ upsert:false });
   if(error) throw error;
-}
-async function bulkMove(runId, ids){
-  if(ids.length){
-    const { error: delErr } = await supabaseClient.from('product_runs')
-      .delete().in('product_id', ids);
-    if(delErr) throw delErr;
-    await bulkAdd(runId, ids);
-  }
-}
-el('btnAdd').onclick = async ()=>{
-  const runId = el('targetRun').value;
-  const ids = Array.from(selectedIds);
-  if(!runId){ alert('請選擇目標連線'); return; }
-  if(ids.length===0){ alert('請先勾選商品'); return; }
-  try{
-    await bulkAdd(runId, ids);
-    alert('已加入（合併）至目標連線');
-    await refreshProductRunMap(); renderProducts();
-  }catch(e){ alert('加入失敗：'+e.message); }
-};
-el('btnMove').onclick = async ()=>{
-  const runId = el('targetRun').value;
-  const ids = Array.from(selectedIds);
-  if(!runId){ alert('請選擇目標連線'); return; }
-  if(ids.length===0){ alert('請先勾選商品'); return; }
-  if(!confirm(`將 ${ids.length} 項商品搬家到選定連線（取代原關聯）？`)) return;
-  try{
-    await bulkMove(runId, ids);
-    alert('已搬家（取代）');
-    await refreshProductRunMap(); renderProducts();
-  }catch(e){ alert('搬家失敗：'+e.message); }
-};
-
-/* ===== Create product ===== */
-async function uploadToStorage(file){
-  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-  const path = `products/${new Date().toISOString().slice(0,10)}/${uuid4()}.${ext}`;
-  const { error: upErr } = await supabaseClient.storage.from(BUCKET).upload(path, file, { upsert:false });
-  if(upErr) throw upErr;
   const { data } = supabaseClient.storage.from(BUCKET).getPublicUrl(path);
-  return { path, url: data?.publicUrl || '' };
+  return { path, url: data?.publicUrl||'' };
 }
-el('btnCreateProduct').onclick = async ()=>{
-  const info = el('createInfo'); info.textContent='';
-  const name = el('f_name').value.trim();
-  const price = el('f_price').value ? Number(el('f_price').value) : null;
-  const category = el('f_category').value.trim() || null;
-  const status = el('f_status').value || null;
-  const arrival_time = el('f_arrival').value.trim() || null;
-  const eta_text = el('f_eta').value.trim() || null;
-  const tags = (el('f_tags').value||'').split(',').map(s=>s.trim()).filter(Boolean);
-  let img_url = el('f_img_url').value.trim() || '';
-  const file = el('f_file').files[0];
+$('btnCreateProduct').onclick=async()=>{
+  const name=$('p_name').value.trim(); if(!name){alert('請輸入名稱');return;}
+  const price=$('p_price').value? Number($('p_price').value):null;
+  const jpy_cost=$('p_cost').value? Number($('p_cost').value):null;  // ★ 後台專用
+  const category=$('p_category').value.trim()||null;
+  const status=$('p_status').value||null;
+  const arrival_time=$('p_arrival').value.trim()||null;
+  const eta_text=$('p_eta').value.trim()||null;
+  const tags=($('p_tags').value||'').split(',').map(s=>s.trim()).filter(Boolean);
+  let img_url=$('p_img_url').value.trim()||'';
+  const file=$('p_file').files[0];
+  $('p_msg').textContent='';
 
   try{
-    let images = null;
-    if(file){
-      const up = await uploadToStorage(file);
-      if(!img_url) img_url = up.url;
-      images = [up.path];
-    }
-
-    const row = { name, price, category, status, arrival_time, eta_text, img_url: img_url || null, images, tags: tags.length? tags: null };
-    if(!name){ alert('請輸入名稱'); return; }
-
-    const { data, error } = await supabaseClient.from('products').insert(row).select('id').single();
+    let images=null;
+    if(file){ const up=await upload(file); if(!img_url) img_url=up.url; images=[up.path]; }
+    const row={ name, price, jpy_cost, category, status, arrival_time, eta_text, img_url:img_url||null, images, tags: tags.length?tags:null };
+    const { error } = await supabaseClient.from('products').insert(row);
     if(error) throw error;
-    info.textContent = '已新增商品';
-    // 清表單
-    ['f_name','f_price','f_category','f_status','f_arrival','f_eta','f_img_url','f_tags'].forEach(id=> el(id).value='');
-    el('f_file').value='';
-    // 刷列表
-    await loadProducts();
-  }catch(e){
-    info.textContent = '新增失敗：' + (e.message||e);
-  }
+    $('p_msg').textContent='已新增';
+    ['p_name','p_price','p_cost','p_category','p_status','p_arrival','p_eta','p_img_url','p_tags'].forEach(id=>$(id).value=''); $('p_file').value='';
+    await loadProducts(); await loadCats();
+  }catch(e){ $('p_msg').textContent='新增失敗：'+(e.message||e); }
 };
 
-/* ===== Init ===== */
-(async function init(){
-  await loadRuns();
-  await loadProducts();
-})();
+/* ---------- Bulk Move ---------- */
+async function loadProducts(){
+  const { data } = await supabaseClient.from('products').select('id,name,price,category').order('created_at',{ascending:false});
+  products=data||[]; await mapProductRuns(); renderProductsTable();
+}
+async function mapProductRuns(){
+  prodRunMap=new Map();
+  const { data } = await supabaseClient.from('product_runs').select('product_id,run_id');
+  const mapTitle=new Map(runs.map(r=>[r.id, r.title||r.code||r.region]));
+  (data||[]).forEach(pr=>{ const arr=prodRunMap.get(pr.product_id)||[]; arr.push(mapTitle.get(pr.run_id)||pr.run_id); prodRunMap.set(pr.product_id,arr); });
+}
+function renderProductsTable(){
+  const q=($('q').value||'').toLowerCase(); const tb=$('productsTbody'); tb.innerHTML='';
+  const list=products.filter(p=>!q || `${p.name||''} ${p.category||''}`.toLowerCase().includes(q));
+  list.forEach(p=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input type="checkbox" data-id="${p.id}" ${selected.has(p.id)?'checked':''}></td>
+      <td>${p.name||''}</td><td>${p.category||''}</td><td>${p.price||''}</td><td class="muted">${(prodRunMap.get(p.id)||[]).join('、')}</td>`;
+    tb.appendChild(tr);
+  });
+  tb.querySelectorAll('input[type="checkbox"]').forEach(ch=>{ ch.onchange=()=>{ const id=ch.dataset.id; if(ch.checked) selected.add(id); else selected.delete(id); $('selCount').textContent=`已選 ${selected.size} 項`; }; });
+  $('selCount').textContent=`已選 ${selected.size} 項`;
+}
+$('q').oninput=renderProductsTable;
+$('selAll').onclick=()=>{ products.forEach(p=>selected.add(p.id)); renderProductsTable(); };
+$('selNone').onclick=()=>{ selected.clear(); renderProductsTable(); };
+$('selInv').onclick=()=>{ const now=new Set(selected); products.forEach(p=>{ if(now.has(p.id)) selected.delete(p.id); else selected.add(p.id); }); renderProductsTable(); };
+
+async function bulkAdd(runId, ids){ if(!ids.length) return; const rows=ids.map(pid=>({product_id:pid, run_id:runId})); const { error } = await supabaseClient.from('product_runs').upsert(rows,{onConflict:'product_id,run_id'}); if(error) throw error; }
+async function bulkMove(runId, ids){ if(!ids.length) return; const { error:delErr } = await supabaseClient.from('product_runs').delete().in('product_id',ids); if(delErr) throw delErr; await bulkAdd(runId, ids); }
+$('btnAdd').onclick=async()=>{ const runId=$('targetRun').value; const ids=[...selected]; if(!runId||!ids.length) return alert('請選目標連線/勾選商品'); try{ await bulkAdd(runId, ids); alert('已加入（合併）'); await mapProductRuns(); renderProductsTable(); }catch(e){ alert('加入失敗：'+e.message); } };
+$('btnMove').onclick=async()=>{ const runId=$('targetRun').value; const ids=[...selected]; if(!runId||!ids.length) return alert('請選目標連線/勾選商品'); if(!confirm(`將 ${ids.length} 項搬家（取代原關聯）？`)) return; try{ await bulkMove(runId, ids); alert('已搬家'); await mapProductRuns(); renderProductsTable(); }catch(e){ alert('搬家失敗：'+e.message); } };
+
+/* ---------- Settings ---------- */
+async function loadNotice(){ const { data } = await supabaseClient.from('site_meta').select('value').eq('key','home_notice').maybeSingle(); $('homeNotice').value=data?.value||''; }
+$('btnSaveNotice').onclick=async()=>{ const { error } = await supabaseClient.from('site_meta').upsert({key:'home_notice', value:$('homeNotice').value, updated_at:new Date().toISOString()}); $('noticeSaved').textContent= error? ('失敗：'+error.message): '已儲存'; setTimeout(()=>$('noticeSaved').textContent='',1200); };
+
+/* ---------- Init ---------- */
+(async function init(){ await loadRuns(); await loadProducts(); await loadCats(); await loadNotice(); })();
 </script>
 </body>
 </html>
