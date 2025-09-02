@@ -5,200 +5,46 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>旅游人生選物代購｜Select Shop</title>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-    }
+    body { margin:0; font-family: Arial, sans-serif; }
     /* Loading screen */
-    #loading {
-      position: fixed;
-      top: 50%;
-      width: 100%;
-      text-align: center;
-      transform: translateY(-50%);
-      font-size: 1.2em;
-      color: #555;
-    }
+    #loading { position:fixed; top:50%; width:100%; text-align:center; transform:translateY(-50%); font-size:1.2em; color:#555; }
     /* Container styling */
-    #addFriendPage, #shopPage {
-      display: none;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-      text-align: center;
-    }
+    #addFriendPage, #shopPage { display:none; max-width:600px; margin:0 auto; padding:20px; text-align:center; }
     /* Add Friend Page */
-    #addFriendPage h2 {
-      margin-bottom: 10px;
-    }
-    #addFriendPage p {
-      margin: 5px 0;
-      color: #333;
-    }
-    #addFriendPage a {
-      display: inline-block;
-      margin: 15px 0 10px;
-      padding: 10px 20px;
-      background-color: #00B900;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 5px;
-      font-size: 16px;
-    }
-    #addFriendPage a:hover {
-      background-color: #00a300;
-    }
-    #addFriendPage button {
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
+    #addFriendPage h2 { margin-bottom:10px; }
+    #addFriendPage p { margin:5px 0; color:#333; }
+    #addFriendPage a { display:inline-block; margin:15px 0 10px; padding:10px 20px; background-color:#00B900; color:#fff; text-decoration:none; border-radius:5px; font-size:16px; }
+    #addFriendPage a:hover { background-color:#00a300; }
+    #addFriendPage button { padding:10px 20px; font-size:16px; cursor:pointer; }
     /* Shop Page */
-    #shopPage h1 {
-      font-size: 1.5em;
-      margin: 0 0 15px;
-      text-align: center;
-    }
-    #searchBar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    #searchBar input {
-      flex: 1 1 150px;
-      padding: 5px;
-      font-size: 16px;
-    }
-    #searchBar select {
-      padding: 5px;
-      font-size: 16px;
-    }
+    #shopPage h1 { font-size:1.5em; margin:0 0 15px; text-align:center; }
+    #searchBar { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px; margin-bottom:20px; }
+    #searchBar input { flex:1 1 150px; padding:5px; font-size:16px; }
+    #searchBar select { padding:5px; font-size:16px; }
     /* Product List */
-    #productList {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-    }
-    .product-card {
-      flex: 1 1 calc(50% - 10px);
-      box-sizing: border-box;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      padding: 10px;
-      text-align: left;
-      background: #fff;
-    }
-    .product-card img {
-      max-width: 100%;
-      height: auto;
-      display: block;
-      margin: 0 auto 10px;
-    }
-    .product-card h3 {
-      font-size: 1em;
-      margin: 0 0 5px;
-    }
-    .product-card p.price {
-      margin: 0 0 8px;
-      font-weight: bold;
-      color: #e91e63;
-    }
-    .product-card p.price .orig-price {
-      margin-left: 5px;
-      text-decoration: line-through;
-      color: #999;
-      font-weight: normal;
-    }
-    .product-card .actions {
-      display: flex;
-      gap: 5px;
-    }
-    .product-card .actions button {
-      flex: 1;
-      padding: 6px;
-      font-size: 14px;
-      cursor: pointer;
-      border: none;
-      border-radius: 4px;
-    }
-    .product-card .actions button.copy-btn {
-      background: #f0f0f0;
-      color: #000;
-    }
-    .product-card .actions button.inquire-btn {
-      background: #00B900;
-      color: #fff;
-    }
-    .product-card .actions button.inquire-btn:hover {
-      background: #00a300;
-    }
+    #productList { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+    .product-card { flex:1 1 calc(50% - 10px); box-sizing:border-box; border:1px solid #ddd; border-radius:5px; padding:10px; text-align:left; background:#fff; }
+    .product-card img { max-width:100%; height:auto; display:block; margin:0 auto 10px; }
+    .product-card h3 { font-size:1em; margin:0 0 5px; }
+    .product-card p.price { margin:0 0 8px; font-weight:bold; color:#e91e63; }
+    .product-card p.price .orig-price { margin-left:5px; text-decoration:line-through; color:#999; font-weight:normal; }
+    .product-card .actions { display:flex; gap:5px; }
+    .product-card .actions button { flex:1; padding:6px; font-size:14px; cursor:pointer; border:none; border-radius:4px; }
+    .product-card .actions button.copy-btn { background:#f0f0f0; color:#000; }
+    .product-card .actions button.inquire-btn { background:#00B900; color:#fff; }
+    .product-card .actions button.inquire-btn:hover { background:#00a300; }
     /* Modal (Contact Options) */
-    #contactModal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      z-index: 1000;
-    }
-    #modalOverlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-    }
-    .modal-content {
-      position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      max-width: 90%;
-      width: 320px;
-      text-align: center;
-    }
-    .modal-content h2 {
-      margin-top: 0;
-    }
-    .modal-content p {
-      color: #333;
-      line-height: 1.5;
-    }
-    .contact-options {
-      display: flex;
-      gap: 10px;
-      margin: 20px 0;
-    }
-    .contact-options .option {
-      flex: 1;
-      border: 1px solid #aaa;
-      border-radius: 5px;
-      padding: 10px;
-      text-decoration: none;
-      color: #000;
-      background: #f9f9f9;
-    }
-    .contact-options .option h3 {
-      margin: 0 0 5px;
-      font-size: 16px;
-    }
-    .contact-options .option p {
-      margin: 0;
-      font-size: 14px;
-    }
-    .contact-options .option:hover {
-      background: #f0f0f0;
-    }
-    .modal-content button {
-      margin-top: 10px;
-      padding: 8px 16px;
-      font-size: 14px;
-      cursor: pointer;
-    }
+    #contactModal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:1000; }
+    #modalOverlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
+    .modal-content { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; padding:20px; border-radius:8px; max-width:90%; width:320px; text-align:center; }
+    .modal-content h2 { margin-top:0; }
+    .modal-content p { color:#333; line-height:1.5; }
+    .contact-options { display:flex; gap:10px; margin:20px 0; }
+    .contact-options .option { flex:1; border:1px solid #aaa; border-radius:5px; padding:10px; text-decoration:none; color:#000; background:#f9f9f9; }
+    .contact-options .option h3 { margin:0 0 5px; font-size:16px; }
+    .contact-options .option p { margin:0; font-size:14px; }
+    .contact-options .option:hover { background:#f0f0f0; }
+    .modal-content button { margin-top:10px; padding:8px 16px; font-size:14px; cursor:pointer; }
   </style>
 </head>
 <body>
@@ -257,15 +103,23 @@
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js" charset="utf-8"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // Initialize Supabase client
-    const supabaseUrl = 'https://yuyu.f86.supabase.co';
+    // ===== Supabase 正確連線設定（已修正） =====
+    const supabaseUrl = 'https://llbpmqyjigovxixeohzr.supabase.co'; // ✅ 正確
     const supabaseKey = 'sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';
+    const BUCKET = 'yuyu.f86'; // ✅ 用於 images[0] → public URL
     const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
     // Global data store
     let productsData = [];
 
-    // Function to display a list of products
+    // 由 Storage 路徑取 Public URL
+    function publicUrlFromPath(path) {
+      if (!path) return '';
+      const { data } = supabaseClient.storage.from(BUCKET).getPublicUrl(path);
+      return data?.publicUrl || '';
+    }
+
+    // 顯示商品卡片
     function displayProducts(list) {
       const productListElem = document.getElementById('productList');
       if (!list || list.length === 0) {
@@ -274,39 +128,45 @@
       }
       let html = '';
       list.forEach(prod => {
-        // Prepare price display (with original price if available)
-        let priceHTML = `NT$${prod.price}`;
-        if (prod.original_price && prod.original_price !== prod.price) {
-          priceHTML += ` <span class="orig-price">NT$${prod.original_price}</span>`;
+        // 圖片：優先用 img_url（後台寫入），否則用 images[0] 路徑組 public URL
+        const img =
+          (prod.img_url && String(prod.img_url)) ||
+          (Array.isArray(prod.images) && prod.images[0] ? publicUrlFromPath(prod.images[0]) : '');
+
+        // 價格
+        const price = prod.price ?? '';
+        const original = prod.original_price ?? null; // 若有原價就畫刪除線
+        let priceHTML = `NT$${price}`;
+        if (original && original !== price) {
+          priceHTML += ` <span class="orig-price">NT$${original}</span>`;
         }
+
         html += `<div class="product-card">`;
-        if (prod.image_url) {
-          html += `<img src="${prod.image_url}" alt="${prod.name}" />`;
-        }
-        html += `<h3>${prod.name}</h3>`;
+        if (img) html += `<img src="${img}" alt="${prod.name || ''}" />`;
+        html += `<h3>${prod.name || ''}</h3>`;
         html += `<p class="price">${priceHTML}</p>`;
-        html += `<div class="actions">` +
-                `<button class="copy-btn" data-product="${prod.name}">複製下單格式</button>` +
-                `<button class="inquire-btn">詢問 / 下單</button>` +
-                `</div>`;
+        html += `<div class="actions">
+                  <button class="copy-btn" data-product="${prod.name || ''}">複製下單格式</button>
+                  <button class="inquire-btn">詢問 / 下單</button>
+                </div>`;
         html += `</div>`;
       });
       productListElem.innerHTML = html;
     }
 
-    // Function to apply search, filter, and sort
+    // 搜尋 / 篩選 / 排序
     function applyFilters() {
       const searchText = document.getElementById('searchInput').value.toLowerCase();
       const categoryValue = document.getElementById('categoryFilter').value;
       const sortValue = document.getElementById('sortSelect').value;
-      // Filter by search text and category
+
       let filtered = productsData.filter(prod => {
-        const inSearch = prod.name.toLowerCase().includes(searchText) ||
-                         (prod.description ? prod.description.toLowerCase().includes(searchText) : false);
+        const nameHit = (prod.name || '').toLowerCase().includes(searchText);
+        const descHit = (prod.eta_text || '').toLowerCase().includes(searchText); // 你沒有 description 欄，先用 eta_text 當可搜尋字串
         const inCategory = !categoryValue || prod.category === categoryValue;
-        return inSearch && inCategory;
+        return (nameHit || descHit) && inCategory;
       });
-      // Sort the filtered list
+
       if (sortValue === 'priceAsc') {
         filtered.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
       } else if (sortValue === 'priceDesc') {
@@ -314,69 +174,68 @@
       } else if (sortValue === 'newest') {
         filtered.sort((a, b) => {
           if (a.created_at && b.created_at) {
-            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            return new Date(b.created_at) - new Date(a.created_at);
           } else if (a.id && b.id) {
             return b.id - a.id;
-          } else {
-            return 0;
-          }
+          } else { return 0; }
         });
       } else if (sortValue === 'oldest') {
         filtered.sort((a, b) => {
           if (a.created_at && b.created_at) {
-            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+            return new Date(a.created_at) - new Date(b.created_at);
           } else if (a.id && b.id) {
             return a.id - b.id;
-          } else {
-            return 0;
-          }
+          } else { return 0; }
         });
       }
-      // Display the filtered & sorted products
+
       displayProducts(filtered);
     }
 
-    // Enter Shop: show shop page and load products
+    // 進入商店，抓 Supabase 資料
     function enterShop() {
       document.getElementById('loading').style.display = 'none';
       document.getElementById('addFriendPage').style.display = 'none';
       document.getElementById('shopPage').style.display = 'block';
-      // Fetch product data from Supabase
-      supabaseClient.from('products').select('*').then(({ data, error }) => {
-        if (error) {
-          console.error('Supabase 資料讀取錯誤:', error);
-          document.getElementById('productList').innerHTML = '<p>商品資料載入失敗。</p>';
-          return;
-        }
-        productsData = data || [];
-        // Populate category filter options
-        const categorySelect = document.getElementById('categoryFilter');
-        // Clear existing category options except "全部分類"
-        categorySelect.querySelectorAll('option:not([value=""])').forEach(opt => opt.remove());
-        const categories = [...new Set(productsData.filter(p => p.category).map(p => p.category))].sort();
-        categories.forEach(cat => {
-          const opt = document.createElement('option');
-          opt.value = cat;
-          opt.textContent = cat;
-          categorySelect.appendChild(opt);
+
+      supabaseClient
+        .from('products')
+        .select('id, product_id, name, price, category, status, arrival_time, eta_text, tags, images, img_url, created_at')
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Supabase 資料讀取錯誤:', error);
+            document.getElementById('productList').innerHTML = '<p>商品資料載入失敗。</p>';
+            return;
+          }
+          productsData = data || [];
+
+          // 填入分類下拉
+          const categorySelect = document.getElementById('categoryFilter');
+          categorySelect.querySelectorAll('option:not([value=""])').forEach(opt => opt.remove());
+          const categories = [...new Set(productsData.filter(p => p.category).map(p => p.category))].sort();
+          categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat;
+            categorySelect.appendChild(opt);
+          });
+
+          // 初始顯示
+          applyFilters();
         });
-        // Initial display (with default sort applied)
-        applyFilters();
-      });
     }
 
-    // Show Add-Friend page
+    // 顯示加好友頁
     function showAddFriendPage() {
       document.getElementById('loading').style.display = 'none';
       document.getElementById('shopPage').style.display = 'none';
       document.getElementById('addFriendPage').style.display = 'block';
     }
 
-    // Set up event listeners
+    // 事件綁定
     document.getElementById('searchInput').addEventListener('input', applyFilters);
     document.getElementById('categoryFilter').addEventListener('change', applyFilters);
     document.getElementById('sortSelect').addEventListener('change', applyFilters);
-    // Product list: copy and inquire button actions (event delegation)
     document.getElementById('productList').addEventListener('click', function(e) {
       const target = e.target;
       if (target.classList.contains('copy-btn')) {
@@ -389,49 +248,34 @@
         document.getElementById('contactModal').style.display = 'block';
       }
     });
-    // Modal close actions
-    document.getElementById('closeModal').onclick = () => {
-      document.getElementById('contactModal').style.display = 'none';
-    };
-    document.getElementById('modalOverlay').onclick = () => {
-      document.getElementById('contactModal').style.display = 'none';
-    };
-    // "I have joined" button to re-check friendship
+    document.getElementById('closeModal').onclick = () => { document.getElementById('contactModal').style.display = 'none'; };
+    document.getElementById('modalOverlay').onclick = () => { document.getElementById('contactModal').style.display = 'none'; };
     document.getElementById('btnCheckFriend').addEventListener('click', () => {
       liff.getFriendship().then(({ friendFlag }) => {
-        if (friendFlag) {
-          enterShop();
-        } else {
-          alert("尚未加入官方帳號喔！請確認已成功加入。");
-        }
+        if (friendFlag) enterShop();
+        else alert("尚未加入官方帳號喔！請確認已成功加入。");
       });
     });
 
-    // Initialize LIFF and handle login & friend status
-    liff.init({ liffId: "2008022206-rqDnER1B", withLoginOnExternalBrowser: true }).then(() => {
-      if (!liff.isLoggedIn()) {
-        // Not logged in, trigger login
-        liff.login();
-      } else {
-        // Logged in, check friendship status
-        liff.getFriendship().then(({ friendFlag }) => {
-          if (friendFlag) {
-            // Already friend – proceed to shop
-            enterShop();
-          } else {
-            // Not a friend – show add friend prompt
+    // LIFF init
+    liff.init({ liffId: "2008022206-rqDnER1B", withLoginOnExternalBrowser: true })
+      .then(() => {
+        if (!liff.isLoggedIn()) {
+          liff.login();
+        } else {
+          liff.getFriendship().then(({ friendFlag }) => {
+            if (friendFlag) enterShop();
+            else showAddFriendPage();
+          }).catch(err => {
+            console.error('getFriendship 發生錯誤:', err);
             showAddFriendPage();
-          }
-        }).catch(err => {
-          console.error('getFriendship 發生錯誤:', err);
-          showAddFriendPage();
-        });
-      }
-    }).catch(err => {
-      console.error('LIFF 初始化失敗:', err);
-      // If LIFF init fails, just hide loading (to avoid infinite loading state)
-      document.getElementById('loading').innerText = 'LIFF 初始化失敗';
-    });
+          });
+        }
+      })
+      .catch(err => {
+        console.error('LIFF 初始化失敗:', err);
+        document.getElementById('loading').innerText = 'LIFF 初始化失敗';
+      });
   </script>
 </body>
 </html>
