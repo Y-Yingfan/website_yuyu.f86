@@ -32,7 +32,6 @@
     .pitem .ops{display:flex;gap:8px;margin-top:8px}
     .notice{font-size:13px;color:var(--muted)}
     .tag{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 8px;font-size:12px;margin-right:6px}
-    /* modal */
     .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:50}
     .modal.show{display:flex}
     .panel{max-width:720px;width:96%;background:#fff;border-radius:14px;box-shadow:0 12px 34px rgba(0,0,0,.25);padding:16px}
@@ -40,20 +39,20 @@
     .imgbox{position:relative}
     .imgbox img{width:110px;height:110px;object-fit:cover;border:1px solid var(--line);border-radius:10px}
     .imgbox button{position:absolute;top:4px;right:4px;border:none;background:rgba(0,0,0,.6);color:#fff;border-radius:18px;cursor:pointer;padding:2px 6px}
-    .chips{display:flex;flex-wrap:wrap;gap:6px}
     .help{background:#fffbe6;border:1px solid #ffe69c;color:#614a00;border-radius:10px;padding:8px;margin:8px 0;font-size:13px}
+    .plus{white-space:nowrap}
+    .inline{display:flex;gap:8px;align-items:center}
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>商品後台管理</h1>
 
-    <!-- 連線狀態 -->
     <div class="card" id="connCard">
       <div id="connMsg" class="ok">✅ 已連線 Supabase，開始載入介面。</div>
     </div>
 
-    <!-- 登入卡片 -->
+    <!-- 登入 -->
     <div class="card" id="authCard" style="display:none">
       <div class="toolbar">
         <strong>登入</strong>
@@ -79,7 +78,7 @@
       </div>
     </div>
 
-    <!-- 表單卡片 -->
+    <!-- 表單 -->
     <div class="card" id="formCard" style="display:none">
       <div class="toolbar">
         <strong id="formTitle">新增 / 編輯商品</strong>
@@ -94,8 +93,8 @@
           <input id="name"/>
         </div>
         <div>
-          <label>商品編號（自訂 ID）</label>
-          <input id="pid" placeholder="例如 A001"/>
+          <label class="inline">商品編號（自訂 ID） <button id="btnAutoPid" class="btn" type="button" title="重新產生">自動產生</button></label>
+          <input id="pid" placeholder="新增時自動產生，可修改"/>
         </div>
       </div>
 
@@ -105,22 +104,19 @@
           <input id="price" type="number" min="0" />
         </div>
         <div>
-          <label>分類</label>
-          <input id="category" placeholder="香氛 / 藥妝 / MUJI ..."/>
+          <label class="inline">分類 <button id="btnAddCat" class="btn plus" type="button">＋新增</button></label>
+          <select id="categorySelect"></select>
         </div>
       </div>
 
       <div class="row">
         <div>
-          <label>狀態</label>
-          <select id="status">
-            <option>現貨</option>
-            <option>預購</option>
-          </select>
+          <label class="inline">狀態 <button id="btnAddStatus" class="btn plus" type="button">＋新增</button></label>
+          <select id="statusSelect"></select>
         </div>
         <div>
-          <label>到貨（例如：2-4 天 / 約 10–14 天）</label>
-          <input id="arrival" />
+          <label class="inline">到貨（快速選） <button id="btnAddArrival" class="btn plus" type="button">＋新增</button></label>
+          <select id="arrivalSelect"></select>
         </div>
       </div>
 
@@ -142,10 +138,10 @@
         <button id="btnDelete" class="btn danger" style="display:none">刪除</button>
       </div>
 
-      <div class="help">圖片會上傳到 Supabase Storage（bucket: <code>yuyu.f86</code>），網址會自動存到資料表。</div>
+      <div class="help">圖片會上傳到 Supabase Storage（bucket: <code>yuyu.f86</code>），下拉選項會保存到 <code>admin/options.json</code>。</div>
     </div>
 
-    <!-- 清單卡片 -->
+    <!-- 清單 -->
     <div class="card" id="listCard" style="display:none">
       <div class="toolbar">
         <strong>商品清單</strong>
@@ -164,27 +160,26 @@
     </div>
   </div>
 
-  <!-- Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    /* ========= 你的專案設定（已替你填好） ========= */
+    /* ===== 專案設定（沿用你現在的） ===== */
     const SUPABASE_URL  = 'https://llbpmqyjigovxixeohzr.supabase.co';
-    const SUPABASE_KEY  = 'sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB'; // 建議用 Publishable Key
+    const SUPABASE_KEY  = 'sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';
     const ADMIN_EMAIL   = 'lelouvre.yu@gmail.com';
     const BUCKET        = 'yuyu.f86';
+    const OPTIONS_PATH  = 'admin/options.json';
 
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // ====== DOM ======
-    const connCard = document.getElementById('connCard');
-    const connMsg  = document.getElementById('connMsg');
+    // DOM
+    const connMsg = document.getElementById('connMsg');
     const authCard = document.getElementById('authCard');
     const formCard = document.getElementById('formCard');
     const listCard = document.getElementById('listCard');
 
-    const who = document.getElementById('who');
     const adminEmailText = document.getElementById('adminEmailText');
     adminEmailText.textContent = ADMIN_EMAIL;
+    const who = document.getElementById('who');
 
     const email = document.getElementById('email');
     const password = document.getElementById('password');
@@ -193,17 +188,22 @@
     const btnLogout = document.getElementById('btnLogout');
     const authMsg = document.getElementById('authMsg');
 
-    const pid   = document.getElementById('pid');
-    const nameEl= document.getElementById('name');
+    const formTitle = document.getElementById('formTitle');
+    const pid = document.getElementById('pid');
+    const btnAutoPid = document.getElementById('btnAutoPid');
+    const nameEl = document.getElementById('name');
     const price = document.getElementById('price');
-    const category = document.getElementById('category');
-    const status = document.getElementById('status');
-    const arrival= document.getElementById('arrival');
-    const eta    = document.getElementById('eta');
-    const tags   = document.getElementById('tags');
-    const file   = document.getElementById('file');
+    const categorySelect = document.getElementById('categorySelect');
+    const statusSelect = document.getElementById('statusSelect');
+    const arrivalSelect = document.getElementById('arrivalSelect');
+    const btnAddCat = document.getElementById('btnAddCat');
+    const btnAddStatus = document.getElementById('btnAddStatus');
+    const btnAddArrival = document.getElementById('btnAddArrival');
+    const eta = document.getElementById('eta');
+    const tags = document.getElementById('tags');
+    const file = document.getElementById('file');
     const imgPreview = document.getElementById('imgPreview');
-    const btnSave   = document.getElementById('btnSave');
+    const btnSave = document.getElementById('btnSave');
     const btnDelete = document.getElementById('btnDelete');
     const btnResetForm = document.getElementById('btnResetForm');
 
@@ -212,172 +212,197 @@
     const btnReload = document.getElementById('btnReload');
     const grid = document.getElementById('grid');
 
-    // ====== 狀態 ======
+    // state
     let CURRENT_USER = null;
     let EDIT_ID = null;
-    let IMAGES = [];           // {file?, url, path?}  file=>新上傳；path=>既有
     let PRODUCTS = [];
+    let IMAGES = []; // {file?, url, path?}
+    let OPTIONS = {
+      categories:['香氛','藥妝','MUJI','御守 & 淨化噴霧','超商'],
+      statuses:['現貨','預購','補貨中','停售'],
+      arrivals:['2-4 天','7-14 天','10–14 天','14–21 天','本週到貨','下週到貨','月底到貨','指定日期…','自訂…']
+    };
 
-    // ====== 連線檢查 ======
-    async function checkConnection() {
-      try {
-        // 簡單查詢 products（只取 1 筆）確認 REST 正常
+    /* ---------- Options 存取（Storage JSON） ---------- */
+    async function loadOptions(){
+      try{
+        const { data, error } = await sb.storage.from(BUCKET).download(OPTIONS_PATH);
+        if (error) throw error;
+        const txt = await data.text();
+        const json = JSON.parse(txt);
+        if (json?.categories) OPTIONS.categories = json.categories;
+        if (json?.statuses) OPTIONS.statuses = json.statuses;
+        if (json?.arrivals) OPTIONS.arrivals = json.arrivals;
+      }catch(e){
+        // 若沒有檔案，幫你建立一份預設
+        await saveOptions();
+      }
+      renderOptions();
+    }
+    async function saveOptions(){
+      const blob = new Blob([JSON.stringify(OPTIONS,null,2)], { type:'application/json' });
+      await sb.storage.from(BUCKET).upload(OPTIONS_PATH, blob, { upsert:true, contentType:'application/json' });
+    }
+    function renderOptions(){
+      categorySelect.innerHTML = OPTIONS.categories.map(v=>`<option>${v}</option>`).join('');
+      statusSelect.innerHTML   = OPTIONS.statuses.map(v=>`<option>${v}</option>`).join('');
+      arrivalSelect.innerHTML  = OPTIONS.arrivals.map(v=>`<option>${v}</option>`).join('');
+    }
+    async function addOption(type){
+      const text = prompt(`新增 ${type==='cat'?'分類':type==='status'?'狀態':'到貨快速選'}：`);
+      if (!text) return;
+      const arr = (type==='cat')?OPTIONS.categories:(type==='status')?OPTIONS.statuses:OPTIONS.arrivals;
+      if (!arr.includes(text)) arr.push(text);
+      await saveOptions(); renderOptions();
+      if (type==='cat') categorySelect.value = text;
+      if (type==='status') statusSelect.value = text;
+      if (type==='arrival') arrivalSelect.value = text;
+    }
+    btnAddCat.onclick=()=>addOption('cat');
+    btnAddStatus.onclick=()=>addOption('status');
+    btnAddArrival.onclick=()=>addOption('arrival');
+
+    // 到貨下拉的特殊選項處理
+    arrivalSelect.addEventListener('change', ()=>{
+      const v = arrivalSelect.value;
+      if (v==='指定日期…'){
+        const d = prompt('請輸入到貨日期（YYYY-MM-DD）：', new Date().toISOString().slice(0,10));
+        if (d) arrivalSelect.value = d;
+      }else if(v==='自訂…'){
+        const txt = prompt('請輸入到貨說明：');
+        if (txt) arrivalSelect.value = txt;
+      }
+    });
+
+    /* ---------- 連線與登入 ---------- */
+    async function checkConnection(){
+      try{
         const { error } = await sb.from('products').select('id').limit(1);
         if (error) throw error;
         connMsg.textContent = '✅ 已連線 Supabase，開始載入介面。';
-      } catch (e) {
-        connMsg.innerHTML = '❌ 無法連線 Supabase，請檢查 Project 設定。<br>' + (e?.message||e);
+      }catch(e){
+        connMsg.textContent = '❌ 無法連線：'+(e?.message||e);
       }
     }
-
-    // ====== Auth ======
     async function refreshAuth(){
       const { data:{ user } } = await sb.auth.getUser();
       CURRENT_USER = user || null;
-
-      if (CURRENT_USER) {
+      if (CURRENT_USER){
         who.textContent = CURRENT_USER.email || '';
-        authCard.style.display = '';
-        formCard.style.display = '';
-        listCard.style.display = '';
-
-        // 只有指定 Email 才允許使用
-        if ((CURRENT_USER.email || '').toLowerCase() !== ADMIN_EMAIL.toLowerCase()){
-          authMsg.textContent = '此帳號不是管理者，將登出。';
-          await sb.auth.signOut();
-          CURRENT_USER = null;
-          setTimeout(refreshAuth, 800);
-          return;
+        // 只允許管理者
+        if ((CURRENT_USER.email||'').toLowerCase() !== ADMIN_EMAIL.toLowerCase()){
+          await sb.auth.signOut(); CURRENT_USER=null; return refreshAuth();
         }
-        loadProducts();
-      } else {
-        authCard.style.display = '';
-        formCard.style.display = 'none';
-        listCard.style.display = 'none';
-        who.textContent = '';
+        authCard.style.display=''; formCard.style.display=''; listCard.style.display='';
+        await loadOptions();
+        await loadProducts();
+        resetForm(true); // 第一次載入自動給一組編號
+      }else{
+        authCard.style.display=''; formCard.style.display='none'; listCard.style.display='none'; who.textContent='';
       }
     }
-
     btnSignIn.onclick = async()=>{
-      authMsg.textContent = '';
+      authMsg.textContent='';
       if ((email.value||'').toLowerCase() !== ADMIN_EMAIL.toLowerCase()){
-        authMsg.textContent = '僅允許管理者 Email 登入。';
-        return;
+        authMsg.textContent='僅允許管理者 Email 登入。'; return;
       }
       const { error } = await sb.auth.signInWithPassword({ email: email.value.trim(), password: password.value.trim() });
       authMsg.textContent = error ? '登入失敗：'+error.message : '登入成功';
       refreshAuth();
     };
-
     btnSignUp.onclick = async()=>{
-      authMsg.textContent = '';
+      authMsg.textContent='';
       if ((email.value||'').toLowerCase() !== ADMIN_EMAIL.toLowerCase()){
-        authMsg.textContent = '僅允許管理者 Email 註冊。';
-        return;
+        authMsg.textContent='僅允許管理者 Email 註冊。'; return;
       }
       const { data, error } = await sb.auth.signUp({ email: email.value.trim(), password: password.value.trim() });
-      if (error) authMsg.textContent = '註冊失敗：'+error.message;
-      else authMsg.textContent = data.session ? '註冊成功，已登入。' : '註冊成功，請到信箱完成驗證後再登入。';
+      authMsg.textContent = error ? ('註冊失敗：'+error.message) : (data.session ? '註冊成功，已登入。':'註冊成功，請至信箱驗證。');
       refreshAuth();
     };
-
     btnLogout.onclick = async()=>{ await sb.auth.signOut(); refreshAuth(); };
 
-    // ====== 產品 CRUD ======
-    function resetForm(){
-      EDIT_ID = null;
-      pid.value = nameEl.value = arrival.value = eta.value = tags.value = '';
-      price.value = '';
-      category.value = '';
-      status.value = '現貨';
-      file.value = '';
-      IMAGES = []; renderImages();
-      btnDelete.style.display = 'none';
-      document.getElementById('formTitle').textContent = '新增 / 編輯商品';
-    }
-    btnResetForm.onclick = resetForm;
-
+    /* ---------- 產品 CRUD ---------- */
     function renderImages(){
-      imgPreview.innerHTML = '';
+      imgPreview.innerHTML='';
       IMAGES.forEach((it,idx)=>{
-        const box = document.createElement('div');
-        box.className = 'imgbox';
-        const img = document.createElement('img');
-        img.src = it.url;
-        const rm = document.createElement('button');
-        rm.textContent = '×';
-        rm.onclick = ()=>{ IMAGES.splice(idx,1); renderImages(); };
-        // 拖曳
-        img.draggable = true;
-        img.ondragstart = e => { e.dataTransfer.setData('text/plain', idx); };
-        img.ondragover = e => e.preventDefault();
-        img.ondrop = e => {
-          e.preventDefault();
-          const from = +e.dataTransfer.getData('text/plain');
-          const item = IMAGES.splice(from,1)[0];
-          IMAGES.splice(idx,0,item); renderImages();
-        };
-        box.appendChild(img); box.appendChild(rm);
-        imgPreview.appendChild(box);
+        const box=document.createElement('div'); box.className='imgbox';
+        const img=document.createElement('img'); img.src=it.url;
+        const rm=document.createElement('button'); rm.textContent='×'; rm.onclick=()=>{IMAGES.splice(idx,1);renderImages();};
+        img.draggable=true;
+        img.ondragstart=e=>e.dataTransfer.setData('text/plain',idx);
+        img.ondragover=e=>e.preventDefault();
+        img.ondrop=e=>{e.preventDefault();const from=+e.dataTransfer.getData('text/plain');const item=IMAGES.splice(from,1)[0];IMAGES.splice(idx,0,item);renderImages();};
+        box.appendChild(img); box.appendChild(rm); imgPreview.appendChild(box);
       });
     }
-
-    file.onchange = ()=>{
-      const files = Array.from(file.files||[]);
-      files.forEach(f=>{
-        const url = URL.createObjectURL(f);
-        IMAGES.push({ file:f, url }); // 新增
-      });
-      renderImages();
-      file.value = '';
+    file.onchange=()=>{
+      const files=[...file.files]; files.forEach(f=>IMAGES.push({file:f,url:URL.createObjectURL(f)}));
+      renderImages(); file.value='';
     };
 
     async function uploadNewImages(product_id){
-      const uploadedPaths = [];
       for (const it of IMAGES){
         if (!it.file) continue;
-        const ext = (it.file.name.split('.').pop()||'jpg').toLowerCase();
-        const path = `${product_id}/${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
-        const { error } = await sb.storage.from(BUCKET).upload(path, it.file, { upsert:false });
+        const ext=(it.file.name.split('.').pop()||'jpg').toLowerCase();
+        const path=`${product_id}/${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
+        const { error } = await sb.storage.from(BUCKET).upload(path,it.file,{upsert:false});
         if (error) throw new Error('圖片上傳失敗：'+error.message);
-        it.path = path; // 記錄回 item
-        uploadedPaths.push(path);
+        it.path=path;
       }
-      return uploadedPaths;
     }
+    function getPublicUrl(path){ const {data}=sb.storage.from(BUCKET).getPublicUrl(path); return data.publicUrl||''; }
 
-    function getPublicUrl(path){
-      const { data } = sb.storage.from(BUCKET).getPublicUrl(path);
-      return data.publicUrl || '';
+    async function generatePid(autoSet=true){
+      // PYYYYMMDD-### 例：P20250902-001
+      const d=new Date();
+      const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+      const prefix=`P${y}${m}${day}-`;
+      const { data } = await sb.from('products').select('product_id').like('product_id', `${prefix}%`).order('product_id', {ascending:false}).limit(1);
+      let next=1;
+      if (data && data.length){
+        const last=data[0].product_id;
+        const n=parseInt((last||'').slice(prefix.length),10);
+        if (!isNaN(n)) next=n+1;
+      }
+      const id = prefix + String(next).padStart(3,'0');
+      if (autoSet) pid.value=id;
+      return id;
     }
+    btnAutoPid.onclick=()=>generatePid(true);
 
-    btnSave.onclick = async()=>{
+    function resetForm(autoPid=false){
+      EDIT_ID=null; formTitle.textContent='新增 / 編輯商品';
+      btnDelete.style.display='none';
+      nameEl.value=''; price.value='';
+      categorySelect.value=OPTIONS.categories[0]||'';
+      statusSelect.value=OPTIONS.statuses[0]||'現貨';
+      arrivalSelect.value=OPTIONS.arrivals[0]||'2-4 天';
+      eta.value=''; tags.value='';
+      IMAGES=[]; renderImages(); file.value='';
+      if (autoPid) generatePid(true); else pid.value='';
+    }
+    btnResetForm.onclick=()=>resetForm(true);
+
+    btnSave.onclick=async()=>{
       try{
-        // 基本驗證
-        if(!pid.value.trim() || !nameEl.value.trim()){
-          alert('請填寫「商品編號」與「商品名稱」。'); return;
-        }
-        // 先上傳新圖（有 file 的）
+        if(!pid.value.trim() || !nameEl.value.trim()){ alert('請填寫「商品編號」與「商品名稱」。'); return; }
+        // 處理新圖
         await uploadNewImages(pid.value.trim());
-        // 整理圖片 paths
         const paths = IMAGES.map(x=>x.path).filter(Boolean);
-        const firstUrl = paths[0] ? getPublicUrl(paths[0]) : null;
-        // tags 轉陣列
-        const tagArr = (tags.value||'').split(',').map(s=>s.trim()).filter(Boolean);
-
-        const row = {
+        const cover = paths[0] ? getPublicUrl(paths[0]) : null;
+        const tagArr=(tags.value||'').split(',').map(s=>s.trim()).filter(Boolean);
+        const row={
           product_id: pid.value.trim(),
           name: nameEl.value.trim(),
-          price: price.value ? Number(price.value) : null,
-          category: category.value || null,
-          status: status.value || null,
-          arrival_time: arrival.value || null,
+          price: price.value?Number(price.value):null,
+          category: categorySelect.value || null,
+          status: statusSelect.value || null,
+          arrival_time: arrivalSelect.value || null,
           eta_text: eta.value || null,
-          img_url: firstUrl,
+          img_url: cover,
           images: paths,
           tags: tagArr
         };
-
         if (EDIT_ID){
           const { error } = await sb.from('products').update(row).eq('id', EDIT_ID);
           if (error) throw error;
@@ -387,56 +412,43 @@
           if (error) throw error;
           alert('商品已新增');
         }
-        resetForm();
-        loadProducts();
-      }catch(e){
-        console.error(e);
-        alert(e?.message||e);
-      }
+        resetForm(true); loadProducts();
+      }catch(e){ alert(e?.message||e); }
     };
 
-    btnDelete.onclick = async()=>{
+    btnDelete.onclick=async()=>{
       if(!EDIT_ID) return;
       if(!confirm('確定要刪除？')) return;
       try{
-        // 先找出該商品的圖片路徑以便刪除
-        const prod = PRODUCTS.find(p=>p.id===EDIT_ID);
-        const removePaths = (prod?.images||[]);
+        const prod=PRODUCTS.find(p=>p.id===EDIT_ID);
+        const remove=(prod?.images||[]);
         const { error } = await sb.from('products').delete().eq('id', EDIT_ID);
         if (error) throw error;
-        if (removePaths.length){
-          await sb.storage.from(BUCKET).remove(removePaths);
-        }
-        alert('商品已刪除');
-        resetForm();
-        loadProducts();
-      }catch(e){
-        alert(e?.message||e);
-      }
+        if (remove.length) await sb.storage.from(BUCKET).remove(remove);
+        alert('商品已刪除'); resetForm(true); loadProducts();
+      }catch(e){ alert(e?.message||e); }
     };
 
     async function loadProducts(){
-      const { data, error } = await sb.from('products').select('*').order('created_at', { ascending:false });
-      if (error){ alert('讀取商品失敗：'+error.message); return; }
-      PRODUCTS = data || [];
-      renderList();
+      const { data, error } = await sb.from('products').select('*').order('created_at',{ascending:false});
+      if (error){ alert('讀取失敗：'+error.message); return; }
+      PRODUCTS=data||[]; renderList();
     }
-
     function renderList(){
-      const query = (kw.value||'').toLowerCase();
-      let list = PRODUCTS.filter(r=>{
-        const t = `${r.name||''} ${r.product_id||''} ${(r.tags||[]).join(' ')}`.toLowerCase();
-        return !query || t.includes(query);
+      const q=(kw.value||'').toLowerCase();
+      let list=PRODUCTS.filter(r=>{
+        const t=`${r.name||''} ${r.product_id||''} ${(r.tags||[]).join(' ')}`.toLowerCase();
+        return !q || t.includes(q);
       });
       switch (sort.value){
-        case 'new': list.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)); break;
-        case 'old': list.sort((a,b)=>new Date(a.created_at)-new Date(b.created_at)); break;
-        case 'low': list.sort((a,b)=>(a.price||0)-(b.price||0)); break;
-        case 'high': list.sort((a,b)=>(b.price||0)-(a.price||0)); break;
+        case 'new':list.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));break;
+        case 'old':list.sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));break;
+        case 'low':list.sort((a,b)=>(a.price||0)-(b.price||0));break;
+        case 'high':list.sort((a,b)=>(b.price||0)-(a.price||0));break;
       }
-      grid.innerHTML = list.map(r=>{
-        const url = (r.images&&r.images[0]) ? getPublicUrl(r.images[0]) : '';
-        const tags = (r.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
+      grid.innerHTML=list.map(r=>{
+        const url=(r.images&&r.images[0])?getPublicUrl(r.images[0]):'';
+        const tags=(r.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
         return `<article class="pitem" data-id="${r.id}">
           <div class="pic">${url?`<img src="${url}" alt="">`:'<div class="muted" style="padding:18px">(無圖片)</div>'}</div>
           <div class="meta">
@@ -453,55 +465,38 @@
         </article>`;
       }).join('');
     }
-
     grid.addEventListener('click',(e)=>{
-      const actBtn = e.target.closest('button[data-act]');
-      if(!actBtn) return;
-      const card = e.target.closest('.pitem');
-      const id = card?.getAttribute('data-id');
-      const r = PRODUCTS.find(x=>x.id===id);
-      const act = actBtn.getAttribute('data-act');
-
-      if(act==='edit' && r){
-        EDIT_ID = r.id;
-        document.getElementById('formTitle').textContent = '編輯商品';
-        btnDelete.style.display = '';
-        pid.value = r.product_id||''; nameEl.value=r.name||''; price.value=r.price||'';
-        category.value=r.category||''; status.value=r.status||'現貨';
-        arrival.value=r.arrival_time||''; eta.value=r.eta_text||'';
-        tags.value=(r.tags||[]).join(',');
-        IMAGES = (r.images||[]).map(p=>({ path:p, url:getPublicUrl(p) }));
-        renderImages();
+      const btn=e.target.closest('button[data-act]'); if(!btn) return;
+      const id=e.target.closest('.pitem')?.getAttribute('data-id');
+      const r=PRODUCTS.find(x=>x.id===id);
+      const act=btn.getAttribute('data-act');
+      if (act==='edit' && r){
+        EDIT_ID=r.id; formTitle.textContent='編輯商品'; btnDelete.style.display='';
+        pid.value=r.product_id||''; nameEl.value=r.name||''; price.value=r.price||'';
+        categorySelect.value=r.category||OPTIONS.categories[0]||'';
+        statusSelect.value=r.status||OPTIONS.statuses[0]||'現貨';
+        // 如果列表裡沒有該值，補上去
+        if(![...categorySelect.options].some(o=>o.value===categorySelect.value)){ OPTIONS.categories.push(categorySelect.value); renderOptions(); }
+        if(![...statusSelect.options].some(o=>o.value===statusSelect.value)){ OPTIONS.statuses.push(statusSelect.value); renderOptions(); }
+        arrivalSelect.value=r.arrival_time||OPTIONS.arrivals[0]||'2-4 天';
+        if(![...arrivalSelect.options].some(o=>o.value===arrivalSelect.value)){ OPTIONS.arrivals.push(arrivalSelect.value); renderOptions(); }
+        eta.value=r.eta_text||''; tags.value=(r.tags||[]).join(',');
+        IMAGES=(r.images||[]).map(p=>({path:p,url:getPublicUrl(p)})); renderImages();
         window.scrollTo({top:0,behavior:'smooth'});
-      }
-      else if(act==='copy' && r){
-        EDIT_ID = null;
-        document.getElementById('formTitle').textContent = '複製商品（新增）';
-        btnDelete.style.display = 'none';
-        pid.value = (r.product_id||'') + '-new';
-        nameEl.value=r.name||''; price.value=r.price||''; category.value=r.category||'';
-        status.value=r.status||'現貨'; arrival.value=r.arrival_time||''; eta.value=r.eta_text||'';
-        tags.value=(r.tags||[]).join(',');
-        // 下載為檔案再重傳也可以，但為省流量這裡直接沿用路徑（若想複製檔案請再說）
-        IMAGES = (r.images||[]).map(p=>({ path:p, url:getPublicUrl(p) }));
-        renderImages();
+      }else if(act==='copy' && r){
+        EDIT_ID=null; formTitle.textContent='複製商品（新增）'; btnDelete.style.display='none';
+        pid.value=(r.product_id||'')+'-new'; nameEl.value=r.name||''; price.value=r.price||'';
+        categorySelect.value=r.category||OPTIONS.categories[0]||''; statusSelect.value=r.status||OPTIONS.statuses[0]||'現貨';
+        arrivalSelect.value=r.arrival_time||OPTIONS.arrivals[0]||'2-4 天';
+        eta.value=r.eta_text||''; tags.value=(r.tags||[]).join(',');
+        IMAGES=(r.images||[]).map(p=>({path:p,url:getPublicUrl(p)})); renderImages();
         window.scrollTo({top:0,behavior:'smooth'});
-      }
-      else if(act==='del' && r){
-        EDIT_ID = r.id; btnDelete.click();
-      }
+      }else if(act==='del' && r){ EDIT_ID=r.id; btnDelete.click(); }
     });
 
-    kw.oninput = renderList;
-    sort.onchange = renderList;
-    btnReload.onclick = loadProducts;
+    kw.oninput=renderList; sort.onchange=renderList; btnReload.onclick=loadProducts;
 
-    // ===== 啟動 =====
-    (async ()=>{
-      await checkConnection();
-      await refreshAuth();
-    })();
-
+    (async()=>{ await checkConnection(); await refreshAuth(); })();
   </script>
 </body>
 </html>
