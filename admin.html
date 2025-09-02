@@ -2,28 +2,46 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>商品後台管理</title>
   <style>
-    :root{--ink:#2f2f2f;--muted:#6b6a62;--line:#e6e2da;--bg:#f5f3ef;--panel:#fff;--accent:#c2a35d;--danger:#b42318}
+    :root{
+      --bg:#f5f3ef;--panel:#ffffff;--ink:#2f2f2f;--muted:#6b6a62;--line:#e6e2da;--accent:#c2a35d;--danger:#b42318;--ok:#2f855a;--shadow:0 10px 28px rgba(0,0,0,.08)
+    }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif}
-    .wrap{max-width:980px;margin:0 auto;padding:18px}
-    h1{margin:10px 0 16px}
-    .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.06);padding:14px;margin:10px 0}
+    h1{margin:14px 0 10px;text-align:center}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px;margin:12px 0}
+    .ok{color:var(--ok)}
+    .muted{color:var(--muted)}
+    .danger{color:var(--danger)}
     label{display:block;margin:8px 0 6px;color:var(--muted);font-size:14px}
-    input{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+    .row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
     .btn{padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer}
     .btn.primary{background:var(--accent);color:#fff;border:none}
     .btn.danger{background:var(--danger);color:#fff;border:none}
     .toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between}
-    .muted{color:var(--muted)}
-    .msg{margin-top:8px;font-size:14px}
-    .ok{color:#157347}
-    .err{color:#b42318}
-    .hr{height:1px;background:var(--line);margin:12px 0}
-    .hide{display:none}
+    .right{display:flex;gap:8px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+    .pitem{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+    .pitem .pic{aspect-ratio:4/3;background:linear-gradient(180deg,#fff,#f0ede6);display:grid;place-items:center}
+    .pitem img{width:100%;height:100%;object-fit:cover}
+    .pitem .meta{padding:10px}
+    .pitem .ops{display:flex;gap:8px;margin-top:8px}
+    .notice{font-size:13px;color:var(--muted)}
+    .tag{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 8px;font-size:12px;margin-right:6px}
+    /* modal */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:50}
+    .modal.show{display:flex}
+    .panel{max-width:720px;width:96%;background:#fff;border-radius:14px;box-shadow:0 12px 34px rgba(0,0,0,.25);padding:16px}
+    .images{display:flex;flex-wrap:wrap;gap:8px}
+    .imgbox{position:relative}
+    .imgbox img{width:110px;height:110px;object-fit:cover;border:1px solid var(--line);border-radius:10px}
+    .imgbox button{position:absolute;top:4px;right:4px;border:none;background:rgba(0,0,0,.6);color:#fff;border-radius:18px;cursor:pointer;padding:2px 6px}
+    .chips{display:flex;flex-wrap:wrap;gap:6px}
+    .help{background:#fffbe6;border:1px solid #ffe69c;color:#614a00;border-radius:10px;padding:8px;margin:8px 0;font-size:13px}
   </style>
 </head>
 <body>
@@ -31,202 +49,459 @@
     <h1>商品後台管理</h1>
 
     <!-- 連線狀態 -->
-    <div id="connCard" class="card">
-      <div id="connMsg" class="msg muted">正在檢查與 Supabase 的連線…</div>
+    <div class="card" id="connCard">
+      <div id="connMsg" class="ok">✅ 已連線 Supabase，開始載入介面。</div>
     </div>
 
-    <!-- 登入 / 註冊 -->
-    <div id="authCard" class="card">
+    <!-- 登入卡片 -->
+    <div class="card" id="authCard" style="display:none">
       <div class="toolbar">
         <strong>登入</strong>
-        <button id="btnLogout" class="btn">登出</button>
+        <div class="right"><span id="who" class="muted"></span><button id="btnLogout" class="btn">登出</button></div>
       </div>
-      <div class="row">
-        <div>
-          <label>電子信箱</label>
-          <input id="email" placeholder="you@example.com" />
+      <div id="authArea">
+        <div class="row">
+          <div>
+            <label>電子信箱</label>
+            <input id="email" placeholder="you@example.com"/>
+          </div>
+          <div>
+            <label>密碼（至少 8 碼）</label>
+            <input id="password" type="password" placeholder="********"/>
+          </div>
         </div>
-        <div>
-          <label>密碼（至少 8 碼）</label>
-          <input id="password" type="password" placeholder="Password" />
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+          <button id="btnSignIn" class="btn primary">登入</button>
+          <button id="btnSignUp" class="btn">註冊（第一次使用）</button>
+          <span class="muted">僅允許管理者 Email 登入：<b id="adminEmailText"></b></span>
         </div>
+        <div id="authMsg" class="notice" style="margin-top:8px"></div>
       </div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button id="btnLogin" class="btn primary">登入</button>
-        <button id="btnSignup" class="btn">註冊（第一次使用）</button>
-        <button id="btnResend" class="btn">重送驗證信</button>
-      </div>
-      <div class="msg muted" style="margin-top:8px">
-        僅允許管理者 Email 登入：<b>lelouvre.yu@gmail.com</b>
-      </div>
-      <div id="authMsg" class="msg"></div>
-      <details style="margin-top:10px">
-        <summary>若「註冊沒反應」，怎麼辦？</summary>
-        <ol>
-          <li>同一信箱 60 秒內只能重送一次驗證信；請等 1 分鐘再按一次。</li>
-          <li>到垃圾信匣找找，或按「重送驗證信」。</li>
-          <li>確認 <b>Authentication → URL Configuration</b>：
-            <ul>
-              <li>Site URL：<code>https://y-yingfan.github.io/website_yuyu.f86/</code></li>
-              <li>Redirect URLs 有：<code>https://y-yingfan.github.io/website_yuyu.f86/admin.html</code></li>
-            </ul>
-          </li>
-        </ol>
-      </details>
     </div>
 
-    <!-- 管理區（登入後顯示） -->
-    <div id="adminCard" class="card hide">
+    <!-- 表單卡片 -->
+    <div class="card" id="formCard" style="display:none">
       <div class="toolbar">
-        <strong>已登入</strong>
-        <div class="muted" id="who"></div>
+        <strong id="formTitle">新增 / 編輯商品</strong>
+        <div class="right">
+          <button id="btnResetForm" class="btn">清空表單</button>
+        </div>
       </div>
-      <div class="hr"></div>
-      <div class="muted">（此頁主要解決 Email 驗證問題；登入成功後你就可以回到主後台頁面繼續上架。）</div>
+
+      <div class="row">
+        <div>
+          <label>商品名稱</label>
+          <input id="name"/>
+        </div>
+        <div>
+          <label>商品編號（自訂 ID）</label>
+          <input id="pid" placeholder="例如 A001"/>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>價格（整數）</label>
+          <input id="price" type="number" min="0" />
+        </div>
+        <div>
+          <label>分類</label>
+          <input id="category" placeholder="香氛 / 藥妝 / MUJI ..."/>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>狀態</label>
+          <select id="status">
+            <option>現貨</option>
+            <option>預購</option>
+          </select>
+        </div>
+        <div>
+          <label>到貨（例如：2-4 天 / 約 10–14 天）</label>
+          <input id="arrival" />
+        </div>
+      </div>
+
+      <label>到貨說明（eta_text，選填）</label>
+      <input id="eta" placeholder="例如：海運班期調整，預估 14–21 天"/>
+
+      <label>標籤（用 , 分隔，如：熱賣,送禮）</label>
+      <input id="tags"/>
+
+      <label>商品圖片（可多張，拖曳排序）</label>
+      <div class="images" id="imgPreview"></div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+        <input id="file" type="file" accept="image/*" multiple />
+        <span class="muted">封面以左上第一張為主。</span>
+      </div>
+
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button id="btnSave" class="btn primary">儲存</button>
+        <button id="btnDelete" class="btn danger" style="display:none">刪除</button>
+      </div>
+
+      <div class="help">圖片會上傳到 Supabase Storage（bucket: <code>yuyu.f86</code>），網址會自動存到資料表。</div>
+    </div>
+
+    <!-- 清單卡片 -->
+    <div class="card" id="listCard" style="display:none">
+      <div class="toolbar">
+        <strong>商品清單</strong>
+        <div class="right">
+          <input id="kw" placeholder="搜尋名稱 / 標籤 / 編號" style="width:240px"/>
+          <select id="sort">
+            <option value="new">上架：最新優先</option>
+            <option value="old">上架：最舊優先</option>
+            <option value="low">價格：低到高</option>
+            <option value="high">價格：高到低</option>
+          </select>
+          <button id="btnReload" class="btn">重新整理</button>
+        </div>
+      </div>
+      <div id="grid" class="grid"></div>
     </div>
   </div>
 
+  <!-- Supabase JS SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // ===== 你的設定（已填入你提供的值） =====
+    /* ========= 你的專案設定（已替你填好） ========= */
     const SUPABASE_URL  = 'https://llbpmqyjigovxixeohzr.supabase.co';
-    const SUPABASE_KEY  = 'sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';
+    const SUPABASE_KEY  = 'sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB'; // 建議用 Publishable Key
     const ADMIN_EMAIL   = 'lelouvre.yu@gmail.com';
-    const FRONTEND_REDIRECT = 'https://y-yingfan.github.io/website_yuyu.f86/admin.html'; // 驗證後導回
-    const BUCKET = 'yuyu.f86';
+    const BUCKET        = 'yuyu.f86';
 
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // ===== UI refs =====
-    const connMsg = document.getElementById('connMsg');
-    const authMsg = document.getElementById('authMsg');
-    const adminCard = document.getElementById('adminCard');
-    const authCard  = document.getElementById('authCard');
+    // ====== DOM ======
+    const connCard = document.getElementById('connCard');
+    const connMsg  = document.getElementById('connMsg');
+    const authCard = document.getElementById('authCard');
+    const formCard = document.getElementById('formCard');
+    const listCard = document.getElementById('listCard');
+
     const who = document.getElementById('who');
+    const adminEmailText = document.getElementById('adminEmailText');
+    adminEmailText.textContent = ADMIN_EMAIL;
+
     const email = document.getElementById('email');
     const password = document.getElementById('password');
-    const btnLogin = document.getElementById('btnLogin');
-    const btnSignup = document.getElementById('btnSignup');
-    const btnResend = document.getElementById('btnResend');
+    const btnSignIn = document.getElementById('btnSignIn');
+    const btnSignUp = document.getElementById('btnSignUp');
     const btnLogout = document.getElementById('btnLogout');
+    const authMsg = document.getElementById('authMsg');
 
-    // ===== 連線檢查（用 SDK + REST v2）=====
-    (async function checkConn(){
-      try{
-        // 1) SDK 檢查：列空表（不影響資料）
-        const { error: e1 } = await sb.from('products').select('id').limit(1);
-        if(e1) throw e1;
+    const pid   = document.getElementById('pid');
+    const nameEl= document.getElementById('name');
+    const price = document.getElementById('price');
+    const category = document.getElementById('category');
+    const status = document.getElementById('status');
+    const arrival= document.getElementById('arrival');
+    const eta    = document.getElementById('eta');
+    const tags   = document.getElementById('tags');
+    const file   = document.getElementById('file');
+    const imgPreview = document.getElementById('imgPreview');
+    const btnSave   = document.getElementById('btnSave');
+    const btnDelete = document.getElementById('btnDelete');
+    const btnResetForm = document.getElementById('btnResetForm');
 
-        // 2) REST v2 檢查（帶 apikey）
-        const ok = await fetch(`${SUPABASE_URL}/rest/v1/products?select=id&limit=1`, {
-          headers: { apikey: SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}` }
-        });
-        if(!ok.ok) throw new Error('REST v2 連線失敗');
+    const kw = document.getElementById('kw');
+    const sort = document.getElementById('sort');
+    const btnReload = document.getElementById('btnReload');
+    const grid = document.getElementById('grid');
 
+    // ====== 狀態 ======
+    let CURRENT_USER = null;
+    let EDIT_ID = null;
+    let IMAGES = [];           // {file?, url, path?}  file=>新上傳；path=>既有
+    let PRODUCTS = [];
+
+    // ====== 連線檢查 ======
+    async function checkConnection() {
+      try {
+        // 簡單查詢 products（只取 1 筆）確認 REST 正常
+        const { error } = await sb.from('products').select('id').limit(1);
+        if (error) throw error;
         connMsg.textContent = '✅ 已連線 Supabase，開始載入介面。';
-        connMsg.className = 'msg ok';
-      }catch(err){
-        connMsg.textContent = '❌ 無法連線 Supabase，請檢查 Project URL / Key。錯誤：' + (err?.message||err);
-        connMsg.className = 'msg err';
-      }
-    })();
-
-    // ===== 會話狀態 =====
-    (async function boot(){
-      const { data:{session} } = await sb.auth.getSession();
-      renderAuth(session?.user||null);
-    })();
-
-    function renderAuth(user){
-      if(user){
-        who.textContent = user.email || '';
-        adminCard.classList.remove('hide');
-        authCard.classList.add('hide');
-      }else{
-        adminCard.classList.add('hide');
-        authCard.classList.remove('hide');
+      } catch (e) {
+        connMsg.innerHTML = '❌ 無法連線 Supabase，請檢查 Project 設定。<br>' + (e?.message||e);
       }
     }
 
-    // ===== helpers =====
-    function setAuthMsg(msg, ok=false){
-      authMsg.textContent = msg||'';
-      authMsg.className = 'msg ' + (ok ? 'ok' : 'err');
-    }
-    function mustAdminAddress(addr){
-      return (addr||'').trim().toLowerCase() === ADMIN_EMAIL.toLowerCase();
-    }
+    // ====== Auth ======
+    async function refreshAuth(){
+      const { data:{ user } } = await sb.auth.getUser();
+      CURRENT_USER = user || null;
 
-    // ===== actions =====
-    btnLogin.onclick = async ()=>{
-      setAuthMsg('');
-      const addr = email.value.trim();
-      const pass = password.value;
-      if(!mustAdminAddress(addr)) return setAuthMsg('僅允許管理者 Email 登入', false);
-      if(!addr || !pass) return setAuthMsg('請輸入 Email 與密碼', false);
+      if (CURRENT_USER) {
+        who.textContent = CURRENT_USER.email || '';
+        authCard.style.display = '';
+        formCard.style.display = '';
+        listCard.style.display = '';
 
-      const { data, error } = await sb.auth.signInWithPassword({ email: addr, password: pass });
-      if(error){
-        const m = (''+error.message).toLowerCase();
-        if(m.includes('email') && m.includes('not confirmed')) return setAuthMsg('帳號尚未驗證，請先到信箱點擊確認信。', false);
-        return setAuthMsg('登入失敗：'+error.message, false);
-      }
-      renderAuth(data.user);
-      setAuthMsg('登入成功', true);
-    };
-
-    btnSignup.onclick = async ()=>{
-      setAuthMsg('');
-      const addr = email.value.trim();
-      const pass = password.value;
-      if(!mustAdminAddress(addr)) return setAuthMsg('僅允許管理者 Email 註冊', false);
-      if(!addr || !pass) return setAuthMsg('請輸入 Email 與密碼（至少 8 碼）', false);
-      if(pass.length < 8) return setAuthMsg('密碼至少 8 碼', false);
-
-      // 指定驗證後導回 admin.html（已加入 Redirect 白名單）
-      const { data, error } = await sb.auth.signUp({
-        email: addr, password: pass,
-        options: { emailRedirectTo: FRONTEND_REDIRECT }
-      });
-      if(error){
-        const m = (''+error.message).toLowerCase();
-        if(m.includes('rate limit') || m.includes('security purposes')){
-          return setAuthMsg('註冊過於頻繁，請等待約 60 秒後再按一次。', false);
+        // 只有指定 Email 才允許使用
+        if ((CURRENT_USER.email || '').toLowerCase() !== ADMIN_EMAIL.toLowerCase()){
+          authMsg.textContent = '此帳號不是管理者，將登出。';
+          await sb.auth.signOut();
+          CURRENT_USER = null;
+          setTimeout(refreshAuth, 800);
+          return;
         }
-        return setAuthMsg('註冊失敗：'+error.message, false);
+        loadProducts();
+      } else {
+        authCard.style.display = '';
+        formCard.style.display = 'none';
+        listCard.style.display = 'none';
+        who.textContent = '';
       }
-      if(!data.session){
-        setAuthMsg('已寄出驗證信，請到信箱完成驗證（收件匣 / 垃圾信匣）。', true);
-      }else{
-        // 專案若關閉 email 確認，會直接登入
-        renderAuth(data.user);
-        setAuthMsg('註冊並登入成功', true);
+    }
+
+    btnSignIn.onclick = async()=>{
+      authMsg.textContent = '';
+      if ((email.value||'').toLowerCase() !== ADMIN_EMAIL.toLowerCase()){
+        authMsg.textContent = '僅允許管理者 Email 登入。';
+        return;
       }
+      const { error } = await sb.auth.signInWithPassword({ email: email.value.trim(), password: password.value.trim() });
+      authMsg.textContent = error ? '登入失敗：'+error.message : '登入成功';
+      refreshAuth();
     };
 
-    // 重送驗證信（需等 60 秒）
-    btnResend.onclick = async ()=>{
-      setAuthMsg('');
-      const addr = email.value.trim();
-      if(!mustAdminAddress(addr)) return setAuthMsg('僅允許管理者 Email 重送驗證信', false);
-      const { data, error } = await sb.auth.resend({
-        type: 'signup',
-        email: addr,
-        options: { emailRedirectTo: FRONTEND_REDIRECT }
+    btnSignUp.onclick = async()=>{
+      authMsg.textContent = '';
+      if ((email.value||'').toLowerCase() !== ADMIN_EMAIL.toLowerCase()){
+        authMsg.textContent = '僅允許管理者 Email 註冊。';
+        return;
+      }
+      const { data, error } = await sb.auth.signUp({ email: email.value.trim(), password: password.value.trim() });
+      if (error) authMsg.textContent = '註冊失敗：'+error.message;
+      else authMsg.textContent = data.session ? '註冊成功，已登入。' : '註冊成功，請到信箱完成驗證後再登入。';
+      refreshAuth();
+    };
+
+    btnLogout.onclick = async()=>{ await sb.auth.signOut(); refreshAuth(); };
+
+    // ====== 產品 CRUD ======
+    function resetForm(){
+      EDIT_ID = null;
+      pid.value = nameEl.value = arrival.value = eta.value = tags.value = '';
+      price.value = '';
+      category.value = '';
+      status.value = '現貨';
+      file.value = '';
+      IMAGES = []; renderImages();
+      btnDelete.style.display = 'none';
+      document.getElementById('formTitle').textContent = '新增 / 編輯商品';
+    }
+    btnResetForm.onclick = resetForm;
+
+    function renderImages(){
+      imgPreview.innerHTML = '';
+      IMAGES.forEach((it,idx)=>{
+        const box = document.createElement('div');
+        box.className = 'imgbox';
+        const img = document.createElement('img');
+        img.src = it.url;
+        const rm = document.createElement('button');
+        rm.textContent = '×';
+        rm.onclick = ()=>{ IMAGES.splice(idx,1); renderImages(); };
+        // 拖曳
+        img.draggable = true;
+        img.ondragstart = e => { e.dataTransfer.setData('text/plain', idx); };
+        img.ondragover = e => e.preventDefault();
+        img.ondrop = e => {
+          e.preventDefault();
+          const from = +e.dataTransfer.getData('text/plain');
+          const item = IMAGES.splice(from,1)[0];
+          IMAGES.splice(idx,0,item); renderImages();
+        };
+        box.appendChild(img); box.appendChild(rm);
+        imgPreview.appendChild(box);
       });
-      if(error){
-        const m = (''+error.message).toLowerCase();
-        if(m.includes('rate limit')) return setAuthMsg('重送過於頻繁，請等待約 60 秒再試。', false);
-        return setAuthMsg('重送失敗：'+error.message, false);
-      }
-      setAuthMsg('已重送驗證信，請到信箱查看。', true);
+    }
+
+    file.onchange = ()=>{
+      const files = Array.from(file.files||[]);
+      files.forEach(f=>{
+        const url = URL.createObjectURL(f);
+        IMAGES.push({ file:f, url }); // 新增
+      });
+      renderImages();
+      file.value = '';
     };
 
-    btnLogout.onclick = async()=>{
-      await sb.auth.signOut();
-      renderAuth(null);
-      setAuthMsg('已登出。', true);
+    async function uploadNewImages(product_id){
+      const uploadedPaths = [];
+      for (const it of IMAGES){
+        if (!it.file) continue;
+        const ext = (it.file.name.split('.').pop()||'jpg').toLowerCase();
+        const path = `${product_id}/${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
+        const { error } = await sb.storage.from(BUCKET).upload(path, it.file, { upsert:false });
+        if (error) throw new Error('圖片上傳失敗：'+error.message);
+        it.path = path; // 記錄回 item
+        uploadedPaths.push(path);
+      }
+      return uploadedPaths;
+    }
+
+    function getPublicUrl(path){
+      const { data } = sb.storage.from(BUCKET).getPublicUrl(path);
+      return data.publicUrl || '';
+    }
+
+    btnSave.onclick = async()=>{
+      try{
+        // 基本驗證
+        if(!pid.value.trim() || !nameEl.value.trim()){
+          alert('請填寫「商品編號」與「商品名稱」。'); return;
+        }
+        // 先上傳新圖（有 file 的）
+        await uploadNewImages(pid.value.trim());
+        // 整理圖片 paths
+        const paths = IMAGES.map(x=>x.path).filter(Boolean);
+        const firstUrl = paths[0] ? getPublicUrl(paths[0]) : null;
+        // tags 轉陣列
+        const tagArr = (tags.value||'').split(',').map(s=>s.trim()).filter(Boolean);
+
+        const row = {
+          product_id: pid.value.trim(),
+          name: nameEl.value.trim(),
+          price: price.value ? Number(price.value) : null,
+          category: category.value || null,
+          status: status.value || null,
+          arrival_time: arrival.value || null,
+          eta_text: eta.value || null,
+          img_url: firstUrl,
+          images: paths,
+          tags: tagArr
+        };
+
+        if (EDIT_ID){
+          const { error } = await sb.from('products').update(row).eq('id', EDIT_ID);
+          if (error) throw error;
+          alert('商品已更新');
+        }else{
+          const { error } = await sb.from('products').insert(row);
+          if (error) throw error;
+          alert('商品已新增');
+        }
+        resetForm();
+        loadProducts();
+      }catch(e){
+        console.error(e);
+        alert(e?.message||e);
+      }
     };
+
+    btnDelete.onclick = async()=>{
+      if(!EDIT_ID) return;
+      if(!confirm('確定要刪除？')) return;
+      try{
+        // 先找出該商品的圖片路徑以便刪除
+        const prod = PRODUCTS.find(p=>p.id===EDIT_ID);
+        const removePaths = (prod?.images||[]);
+        const { error } = await sb.from('products').delete().eq('id', EDIT_ID);
+        if (error) throw error;
+        if (removePaths.length){
+          await sb.storage.from(BUCKET).remove(removePaths);
+        }
+        alert('商品已刪除');
+        resetForm();
+        loadProducts();
+      }catch(e){
+        alert(e?.message||e);
+      }
+    };
+
+    async function loadProducts(){
+      const { data, error } = await sb.from('products').select('*').order('created_at', { ascending:false });
+      if (error){ alert('讀取商品失敗：'+error.message); return; }
+      PRODUCTS = data || [];
+      renderList();
+    }
+
+    function renderList(){
+      const query = (kw.value||'').toLowerCase();
+      let list = PRODUCTS.filter(r=>{
+        const t = `${r.name||''} ${r.product_id||''} ${(r.tags||[]).join(' ')}`.toLowerCase();
+        return !query || t.includes(query);
+      });
+      switch (sort.value){
+        case 'new': list.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)); break;
+        case 'old': list.sort((a,b)=>new Date(a.created_at)-new Date(b.created_at)); break;
+        case 'low': list.sort((a,b)=>(a.price||0)-(b.price||0)); break;
+        case 'high': list.sort((a,b)=>(b.price||0)-(a.price||0)); break;
+      }
+      grid.innerHTML = list.map(r=>{
+        const url = (r.images&&r.images[0]) ? getPublicUrl(r.images[0]) : '';
+        const tags = (r.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
+        return `<article class="pitem" data-id="${r.id}">
+          <div class="pic">${url?`<img src="${url}" alt="">`:'<div class="muted" style="padding:18px">(無圖片)</div>'}</div>
+          <div class="meta">
+            <div style="display:flex;justify-content:space-between;gap:8px"><strong>${r.name||''}</strong><span class="muted">${r.product_id||''}</span></div>
+            <div>$${r.price??'-'}・${r.category||'-'}・${r.status||'-'}</div>
+            <div class="muted">到貨：${r.arrival_time||'-'}</div>
+            <div style="margin-top:6px">${tags}</div>
+            <div class="ops">
+              <button class="btn" data-act="edit">編輯</button>
+              <button class="btn" data-act="copy">複製</button>
+              <button class="btn danger" data-act="del">刪除</button>
+            </div>
+          </div>
+        </article>`;
+      }).join('');
+    }
+
+    grid.addEventListener('click',(e)=>{
+      const actBtn = e.target.closest('button[data-act]');
+      if(!actBtn) return;
+      const card = e.target.closest('.pitem');
+      const id = card?.getAttribute('data-id');
+      const r = PRODUCTS.find(x=>x.id===id);
+      const act = actBtn.getAttribute('data-act');
+
+      if(act==='edit' && r){
+        EDIT_ID = r.id;
+        document.getElementById('formTitle').textContent = '編輯商品';
+        btnDelete.style.display = '';
+        pid.value = r.product_id||''; nameEl.value=r.name||''; price.value=r.price||'';
+        category.value=r.category||''; status.value=r.status||'現貨';
+        arrival.value=r.arrival_time||''; eta.value=r.eta_text||'';
+        tags.value=(r.tags||[]).join(',');
+        IMAGES = (r.images||[]).map(p=>({ path:p, url:getPublicUrl(p) }));
+        renderImages();
+        window.scrollTo({top:0,behavior:'smooth'});
+      }
+      else if(act==='copy' && r){
+        EDIT_ID = null;
+        document.getElementById('formTitle').textContent = '複製商品（新增）';
+        btnDelete.style.display = 'none';
+        pid.value = (r.product_id||'') + '-new';
+        nameEl.value=r.name||''; price.value=r.price||''; category.value=r.category||'';
+        status.value=r.status||'現貨'; arrival.value=r.arrival_time||''; eta.value=r.eta_text||'';
+        tags.value=(r.tags||[]).join(',');
+        // 下載為檔案再重傳也可以，但為省流量這裡直接沿用路徑（若想複製檔案請再說）
+        IMAGES = (r.images||[]).map(p=>({ path:p, url:getPublicUrl(p) }));
+        renderImages();
+        window.scrollTo({top:0,behavior:'smooth'});
+      }
+      else if(act==='del' && r){
+        EDIT_ID = r.id; btnDelete.click();
+      }
+    });
+
+    kw.oninput = renderList;
+    sort.onchange = renderList;
+    btnReload.onclick = loadProducts;
+
+    // ===== 啟動 =====
+    (async ()=>{
+      await checkConnection();
+      await refreshAuth();
+    })();
+
   </script>
 </body>
 </html>
