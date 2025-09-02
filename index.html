@@ -41,7 +41,6 @@
   .panel{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(980px,92vw);max-height:88vh;overflow:auto;background:var(--paper);border:1px solid var(--border);border-radius:22px;box-shadow:var(--shadow);display:grid;grid-template-columns:1fr 1fr;gap:22px;padding:20px}
   @media (max-width:820px){.panel{grid-template-columns:1fr}}
 
-  /* Modal 圖片區：contain 避免爆版；含上一張/下一張與縮圖列 */
   .bigimg{position:relative;width:100%;aspect-ratio:4/3;background:#0b0b0b;border-radius:14px;overflow:hidden}
   .bigimg img{width:100%;height:100%;object-fit:contain;background:#0b0b0b}
   .nav-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.9);border:none;border-radius:999px;padding:8px 12px;cursor:pointer;box-shadow:var(--shadow)}
@@ -61,7 +60,6 @@
   .linkBtn{display:flex;justify-content:space-between;align-items:center;text-decoration:none;padding:14px 16px;border-radius:14px;border:1px solid var(--border);background:#fff;color:var(--ink);box-shadow:var(--shadow)}
   .linkBtn .l{display:flex;align-items:center;gap:10px}.dot{width:10px;height:10px;border-radius:999px}.dot.green{background:#00B900}.dot.blue{background:#4f7dbf}
 
-  /* 詳細欄位 */
   .kv{display:grid;grid-template-columns:92px 1fr;gap:6px 10px;font-size:14px;margin:10px 0}
   .kv .k{color:var(--muted)}
 </style>
@@ -82,7 +80,7 @@
           <input type="text" id="searchInput" placeholder="搜尋商品…" />
           <select id="runFilter">
             <option value="">全部連線</option>
-            <!-- 這裡會動態插入：最近連線、各連線 -->
+            <!-- 動態插入：最近連線 + 個別連線 -->
           </select>
           <select id="categoryFilter"><option value="">全部分類</option></select>
           <select id="sortSelect">
@@ -156,17 +154,17 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // ===== Supabase 設定（你原本的值） =====
+    // === Supabase 設定（你原本的值） ===
     const supabaseUrl='https://llbpmqyjigovxixeohzr.supabase.co';
     const supabaseKey='sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';
     const BUCKET='yuyu.f86';
     const supabaseClient=supabase.createClient(supabaseUrl,supabaseKey);
 
-    // ===== 狀態 =====
+    // === 狀態 ===
     let productsData=[], runs=[], productRuns=[], OPTIONS={categories:[]};
     let recentRunId=null;
 
-    // ===== Helpers =====
+    // === Helpers ===
     function publicUrlFromPath(path){
       if(!path) return '';
       const { data }=supabaseClient.storage.from(BUCKET).getPublicUrl(path);
@@ -180,18 +178,18 @@
       return 0;
     }
 
-    // 解析 images：支援陣列或字串（分隔：逗號/分號/換行），並處理相對路徑到 Storage 公開網址
+    // 解析 images（陣列 / 以逗號、分號、換行分隔的字串；支援 http 完整連結與 Storage 相對路徑）
     function parseImages(p){
       const candidate = p.images ?? p.image_paths ?? p.image ?? p.pictures ?? p.photo_paths ?? '';
       let arr=[];
       if(Array.isArray(candidate)){ arr=candidate; }
       else if(typeof candidate==='string'){ arr=candidate.split(/[\n;,]+/); }
-      if(p.img_url) arr.unshift(p.img_url); // 若有代表圖，優先
+      if(p.img_url) arr.unshift(p.img_url);
       arr = arr.map(s=>String(s||'').trim()).filter(Boolean);
       return arr.map(s => /^https?:\/\//i.test(s) ? s : publicUrlFromPath(s));
     }
 
-    // ===== Render：卡片清單 =====
+    // === 清單 ===
     function cardHTML(p){
       const imgs=parseImages(p);
       const cover=imgs[0]||'';
@@ -204,7 +202,6 @@
         </div>
       </div>`;
     }
-
     function renderList(list){
       const box=document.getElementById('productList'), empty=document.getElementById('emptyTip');
       if(!list||list.length===0){ box.innerHTML=''; empty.style.display='block'; return; }
@@ -228,7 +225,7 @@
       });
     }
 
-    // ===== 篩選/排序 =====
+    // === 篩選/排序（修正：run_id / product_id 一律用字串比對） ===
     function applyFilters(){
       const kw=(document.getElementById('searchInput').value||'').toLowerCase();
       const cat=document.getElementById('categoryFilter').value;
@@ -237,18 +234,18 @@
 
       let chosenRunId=null;
       if(sel==='__recent'){ chosenRunId = recentRunId; }
-      else if(sel){ chosenRunId = Number(sel); }
+      else if(sel){ chosenRunId = sel; } // ← 保持字串
 
       let allowed=null;
       if(chosenRunId!=null){
         const ids = productRuns
-          .filter(x=>Number(x.run_id)===Number(chosenRunId))
-          .map(x=>x.product_id);
+          .filter(x=>String(x.run_id)===String(chosenRunId))
+          .map(x=>String(x.product_id));
         allowed = new Set(ids);
       }
 
       let list=productsData.filter(p=>{
-        if(allowed && !allowed.has(p.id)) return false;
+        if(allowed && !allowed.has(String(p.id))) return false; // ← 字串比
         const text=`${p.name||''} ${(p.eta_text||'')} ${(Array.isArray(p.tags)?p.tags.join(','):(p.tags||''))}`.toLowerCase();
         const hitKw=!kw||text.includes(kw);
         const hitCat=!cat||p.category===cat;
@@ -263,7 +260,7 @@
       renderList(list);
     }
 
-    // ===== 詳情 Modal（含圖庫） =====
+    // === 詳情（圖庫） ===
     const detailModal=document.getElementById('detailModal');
     detailModal.querySelector('.overlay').addEventListener('click',()=> detailModal.style.display='none');
 
@@ -303,8 +300,7 @@
 
     function openDetail(id){
       const p=productsData.find(x=>String(x.id)===String(id)); if(!p) return;
-      galleryImages = parseImages(p);
-      if(!galleryImages.length){ galleryImages=['']; }
+      galleryImages = parseImages(p); if(!galleryImages.length){ galleryImages=['']; }
       galleryIndex=0; buildThumbs(); updateBig();
 
       document.getElementById('dName').textContent=p.name||'';
@@ -334,19 +330,18 @@
       if(el) openDetail(el.getAttribute('data-id'));
     });
 
-    // ===== 聯絡方式 Modal =====
+    // === 聯絡方式 Modal ===
     const linksModal=document.getElementById('linksModal');
     linksModal.querySelector('.overlay').addEventListener('click',()=> linksModal.style.display='none');
     document.getElementById('linksClose').addEventListener('click',()=> linksModal.style.display='none');
     function openLinks(){ linksModal.style.display='block'; }
 
-    // ===== Supabase 請求 =====
+    // === Supabase 查詢（修正：不要過濾 is_active；用 created_at 排序） ===
     async function fetchRuns(){
       const { data, error }=await supabaseClient
         .from('runs')
         .select('id,code,title,region,start_date,end_date,note,ship_start_date,is_active,is_featured,created_at')
-        .eq('is_active',true)
-        .order('start_date',{ascending:false});
+        .order('created_at',{ascending:false}); // 不再 eq('is_active', true)
       if(error){ console.error('fetchRuns error:', error); return []; }
       return data||[];
     }
@@ -358,7 +353,7 @@
       return data||[];
     }
     async function fetchProducts(){
-      const { data, error }=await supabaseClient.from('products').select('*'); // 關鍵：避免欄位不匹配造成整批失敗
+      const { data, error }=await supabaseClient.from('products').select('*');
       if(error){ console.error('fetchProducts error:', error); return []; }
       return data||[];
     }
@@ -369,10 +364,10 @@
           const json=JSON.parse(await data.text());
           if(Array.isArray(json.categories)) OPTIONS.categories=json.categories;
         }
-      }catch(_){ /* ignore */ }
+      }catch(_){ }
     }
 
-    // ===== UI 注入 =====
+    // === UI 注入 ===
     function fillCategories(){
       const sel=document.getElementById('categoryFilter');
       sel.querySelectorAll('option:not([value=""])').forEach(o=>o.remove());
@@ -386,7 +381,7 @@
       sel.querySelectorAll('option:not([value=""])').forEach(o=>o.remove());
 
       if(runs.length){
-        recentRunId = runs[0].id; // 以排序第一筆為「最近連線」
+        recentRunId = runs[0].id; // created_at 新的當「最近連線」
         const recentOpt = document.createElement('option');
         recentOpt.value='__recent';
         recentOpt.textContent='最近連線';
@@ -405,7 +400,7 @@
       document.getElementById('home').style.display='block';
     }
 
-    // ===== 啟動 =====
+    // === 啟動 ===
     async function enterShop(){
       document.getElementById('loading').style.display='none';
       document.getElementById('shopPage').style.display='block';
