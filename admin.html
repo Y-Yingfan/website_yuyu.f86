@@ -5,86 +5,85 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>商品後台管理</title>
   <style>
-    body { background: #f5f5f5; font-family: sans-serif; color: #333; margin: 0; padding: 20px; }
+    body { background: #f5f5f5; font-family: ui-sans-serif, system-ui, -apple-system, "Noto Sans TC", "Microsoft JhengHei", sans-serif; color: #333; margin: 0; padding: 20px; }
     h1 { text-align: center; }
-    /* Login section styles */
-    #login-section { display: none; max-width: 400px; background: #fff; padding: 20px; margin: 80px auto; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+
+    /* Login */
+    #login-section { display: none; max-width: 420px; background: #fff; padding: 20px; margin: 80px auto; border-radius: 10px; box-shadow: 0 10px 24px rgba(0,0,0,.08) }
     #login-section h2 { margin-top: 0; text-align: center; }
-    label { display: block; margin: 0.5em 0 0.2em; font-weight: bold; }
-    label small { font-weight: normal; color: #666; font-size: 0.9em; }
-    input[type=text], input[type=password], input[type=email], input[type=number], select, textarea {
-      width: 100%; padding: 0.5em; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
-    }
-    input, select, textarea { margin-bottom: 0.5em; }
-    .note { font-size: 0.9em; color: #666; }
-    .error { color: red; }
-    .success { color: green; }
-    button { padding: 0.5em 1em; border: none; border-radius: 4px; cursor: pointer; }
-    #login-btn { background-color: #007BFF; color: #fff; margin-right: 1em; }
-    #login-btn:disabled { background-color: #007BFF88; }
-    #signup-btn { background: none; color: #007BFF; text-decoration: underline; }
-    /* Admin section styles */
-    #admin-section { display: none; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1em; }
-    .header h2 { margin: 0; }
-    #logout-btn { background: #ccc; color: #000; }
-    .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1em; }
-    .toolbar .left { display: flex; align-items: center; gap: 0.5em; }
-    #search-input { width: 200px; }
-    select { padding: 0.4em; border: 1px solid #ccc; border-radius: 4px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #ddd; padding: 0.5em; text-align: left; }
-    th { background: #f0f0f0; }
-    tr:nth-child(even) { background: #fafafa; }
-    td.price-cell { text-align: right; }
-    .action-btn { background: #ddd; color: #000; border: none; border-radius: 3px; padding: 0.3em 0.5em; cursor: pointer; margin-right: 0.3em; }
-    .action-btn:last-child { margin-right: 0; }
-    .delete-btn { background: #e74c3c; color: #fff; }
-    /* Modal form styles */
-    #product-form-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
-    #product-form-modal .form-container { background: #fff; padding: 20px; border-radius: 5px; max-width: 600px; width: 90%; max-height: 90%; overflow-y: auto; }
-    #product-form-modal h2 { margin-top: 0; text-align: center; }
-    .form-actions { text-align: center; margin-top: 1em; }
-    .form-actions button { margin: 0 1em; }
-    /* Images preview styles */
-    .images-preview { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1em; }
-    .img-item { position: relative; }
-    .img-item img { max-width: 100px; max-height: 100px; border: 1px solid #ccc; border-radius: 4px; }
-    .remove-btn { position: absolute; top: -5px; right: -5px; background: rgba(0,0,0,0.7); color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 14px; line-height: 18px; text-align: center; padding: 0; }
+    label { display:block; margin:.6em 0 .25em; font-weight:600 }
+    input,select,textarea{ width:100%; padding:.55em .7em; border:1px solid #dcdcdc; border-radius:10px; box-sizing:border-box }
+    .note{ font-size:.9em; color:#666 }
+    .error{ color:#b42318; margin-top:.25em }
+    .success{ color:#2c7a47; margin-top:.25em }
+    button{ padding:.6em 1em; border:none; border-radius:999px; cursor:pointer }
+    #login-btn{ background:#2f6fed; color:#fff; margin-right:.6em }
+    #signup-btn{ background:#fff; color:#2f6fed; border:1px solid #dcdcdc }
+
+    /* Admin */
+    #admin-section{ display:none }
+    .header{ display:flex; justify-content:space-between; align-items:center; margin:16px 0 }
+    #logout-btn{ background:#eee }
+    .toolbar{ display:flex; justify-content:space-between; align-items:center; margin:12px 0 }
+    .toolbar .left{ display:flex; gap:8px; align-items:center }
+    #search-input{ width:240px }
+
+    table{ width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 10px 24px rgba(0,0,0,.06) }
+    th,td{ padding:10px 12px; border-bottom:1px solid #eee; text-align:left }
+    th{ background:#fafafa; font-weight:700 }
+    tr:nth-child(even){ background:#fcfcfc }
+    td.price-cell{ text-align:right }
+    .action-btn{ background:#eee; border:none; border-radius:8px; padding:6px 10px; cursor:pointer; margin-right:6px }
+    .delete-btn{ background:#b42318; color:#fff }
+
+    /* Modal */
+    #product-form-modal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100; align-items:center; justify-content:center }
+    #product-form-modal .form-container{ width:min(680px,92%); max-height:90%; overflow:auto; background:#fff; border-radius:14px; box-shadow:0 20px 40px rgba(0,0,0,.18); padding:18px }
+    #product-form-modal h2{ text-align:center; margin:6px 0 10px }
+    .images-preview{ display:flex; flex-wrap:wrap; gap:10px; margin:.5em 0 1em }
+    .img-item{ position:relative }
+    .img-item img{ width:110px; height:110px; object-fit:cover; border:1px solid #ddd; border-radius:10px }
+    .remove-btn{ position:absolute; top:-6px; right:-6px; width:22px; height:22px; border-radius:50%; background:#111; color:#fff; border:none; cursor:pointer }
+    .form-actions{ text-align:center; margin-top:10px }
+    .form-actions button{ margin:0 8px }
   </style>
 </head>
 <body>
   <h1>商品後台管理</h1>
-  <!-- Login Section -->
+
+  <!-- Login -->
   <div id="login-section">
     <h2>管理員登入</h2>
     <label for="login-email">Email</label>
     <input type="email" id="login-email" placeholder="電子郵件地址" />
-    <label for="login-password">密碼<br><small>至少8碼</small></label>
-    <input type="password" id="login-password" placeholder="" />
+    <label for="login-password">密碼 <small style="font-weight:400;color:#777">至少 8 碼</small></label>
+    <input type="password" id="login-password" />
     <div id="login-message" class="success"></div>
     <div id="login-error" class="error"></div>
-    <button type="button" id="login-btn">登入</button>
-    <button type="button" id="signup-btn">註冊 (第一次使用)</button>
+    <div style="margin-top:8px">
+      <button id="login-btn">登入</button>
+      <button id="signup-btn">註冊（第一次使用）</button>
+    </div>
     <p class="note">僅允許管理者帳號登入與操作。</p>
   </div>
-  <!-- Admin Section -->
+
+  <!-- Admin -->
   <div id="admin-section">
     <div class="header">
       <h2>商品管理</h2>
-      <button type="button" id="logout-btn">登出</button>
+      <button id="logout-btn">登出</button>
     </div>
     <div class="toolbar">
       <div class="left">
-        <input type="text" id="search-input" placeholder="搜尋名稱、標籤、編號" />
+        <input id="search-input" placeholder="搜尋名稱、標籤、編號" />
         <select id="sort-select">
           <option value="desc">上架時間：最新優先</option>
           <option value="asc">上架時間：最舊優先</option>
         </select>
       </div>
-      <button type="button" id="add-btn">新增商品</button>
+      <button id="add-btn" class="action-btn">新增商品</button>
     </div>
-    <table id="products-table">
+    <table>
       <thead>
         <tr>
           <th>名稱</th><th>編號</th><th>價格</th><th>分類</th><th>狀態</th><th>標籤</th><th>操作</th>
@@ -93,616 +92,288 @@
       <tbody id="products-tbody"></tbody>
     </table>
   </div>
-  <!-- Product Form Modal -->
+
+  <!-- Modal Form -->
   <div id="product-form-modal">
     <div class="form-container">
       <form id="product-form">
         <h2 id="form-title">新增商品</h2>
         <div id="form-error" class="error"></div>
-        <label for="name">商品名稱</label>
-        <input type="text" id="name" name="name" placeholder="輸入商品名稱" required />
-        <label for="product_id">商品編號</label>
-        <input type="text" id="product_id" name="product_id" placeholder="輸入商品編號" required />
-        <label for="price">價格</label>
-        <input type="number" id="price" name="price" placeholder="輸入價格" required />
-        <label for="category">分類</label>
-        <input type="text" id="category" name="category" placeholder="輸入分類" />
-        <label for="status">狀態</label>
-        <input type="text" id="status" name="status" placeholder="輸入狀態" />
-        <label for="arrival_time">到貨時間</label>
-        <input type="text" id="arrival_time" name="arrival_time" placeholder="輸入到貨時間" />
-        <label for="eta_text">到貨說明</label>
-        <input type="text" id="eta_text" name="eta_text" placeholder="輸入到貨說明" />
-        <label for="tags">標籤<br><small>多個標籤以逗號分隔</small></label>
-        <input type="text" id="tags" name="tags" placeholder="例如：新品, 限量" />
-        <label for="image-input">商品圖片<br><small>可上傳多張，拖曳以排序</small></label>
-        <input type="file" id="image-input" multiple accept="image/*" />
+
+        <label>商品名稱</label>
+        <input id="name" required />
+        <label>商品編號</label>
+        <input id="product_id" required />
+        <label>價格</label>
+        <input id="price" type="number" required />
+        <label>分類</label>
+        <input id="category" />
+        <label>狀態</label>
+        <input id="status" />
+        <label>到貨時間</label>
+        <input id="arrival_time" />
+        <label>到貨說明（資料表欄位：eta）</label>
+        <input id="eta_text" />
+        <label>標籤 <small style="font-weight:400;color:#777">以「|」分隔：熱賣|送禮</small></label>
+        <input id="tags" />
+
+        <label>商品圖片 <small style="font-weight:400;color:#777">可上傳多張，拖曳排序</small></label>
+        <input id="image-input" type="file" accept="image/*" multiple />
         <div id="images-preview-list" class="images-preview"></div>
+
         <div class="form-actions">
-          <button type="submit" id="save-btn">儲存</button>
-          <button type="button" id="cancel-btn">取消</button>
+          <button id="save-btn" type="submit">儲存</button>
+          <button id="cancel-btn" type="button">取消</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- External Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
   <script>
-    // Supabase client setup
+    // ==== Supabase Config (已替你放入目前專案的 URL/Key) ====
     const SUPABASE_URL = 'https://yuyu.f86.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';
-    const { createClient } = window.supabase;
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const SUPABASE_KEY = 'sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB'; // 建議改成環境變數
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // 僅允許此 Email 註冊/登入
     const allowedEmail = 'lelouvre.yu@gmail.com';
-    let productsList = [];
-    let formMode = 'add';
-    let currentEditId = null;
-    let imagesList = [];      // will hold {file, path, url} objects for images in form
-    let imagesToRemove = [];  // for edit mode, track removed existing image paths
 
-    // UI elements
+    // ==== Elements ====
     const loginSection = document.getElementById('login-section');
     const adminSection = document.getElementById('admin-section');
-    const loginEmailInput = document.getElementById('login-email');
-    const loginPasswordInput = document.getElementById('login-password');
+    const loginEmail = document.getElementById('login-email');
+    const loginPassword = document.getElementById('login-password');
     const loginBtn = document.getElementById('login-btn');
     const signupBtn = document.getElementById('signup-btn');
-    const loginErrorDiv = document.getElementById('login-error');
-    const loginMsgDiv = document.getElementById('login-message');
     const logoutBtn = document.getElementById('logout-btn');
+    const loginMsg = document.getElementById('login-message');
+    const loginErr = document.getElementById('login-error');
+
     const searchInput = document.getElementById('search-input');
     const sortSelect = document.getElementById('sort-select');
     const addBtn = document.getElementById('add-btn');
-    const productsTbody = document.getElementById('products-tbody');
-    const productFormModal = document.getElementById('product-form-modal');
-    const productForm = document.getElementById('product-form');
+    const tbody = document.getElementById('products-tbody');
+
+    const modal = document.getElementById('product-form-modal');
+    const form = document.getElementById('product-form');
     const formTitle = document.getElementById('form-title');
-    const formErrorDiv = document.getElementById('form-error');
+    const formErr = document.getElementById('form-error');
     const saveBtn = document.getElementById('save-btn');
     const cancelBtn = document.getElementById('cancel-btn');
     const imageInput = document.getElementById('image-input');
-    const imagesPreviewList = document.getElementById('images-preview-list');
+    const preview = document.getElementById('images-preview-list');
 
-    // Check session on load
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session && session.user) {
-        // Logged in
-        showAdminUI();
-      } else {
-        showLoginUI();
-      }
+    let products = [];
+    let formMode = 'add'; // add | edit | copy
+    let editingId = null;
+    let images = []; // {file?, path?, url}
+    let imagesToRemove = [];
+
+    // 初始：如果沒有 session → 顯示登入
+    sb.auth.getSession().then(({ data:{ session } }) => {
+      if (session) showAdmin(); else showLogin();
     });
 
-    // Show login UI, hide admin
-    function showLoginUI() {
-      loginSection.style.display = 'block';
-      adminSection.style.display = 'none';
-    }
-    // Show admin UI, hide login and load products
-    async function showAdminUI() {
-      loginSection.style.display = 'none';
-      adminSection.style.display = 'block';
-      await loadProductsList();
+    function showLogin(){ loginSection.style.display='block'; adminSection.style.display='none'; loginEmail.focus(); }
+    function showAdmin(){ loginSection.style.display='none'; adminSection.style.display='block'; loadProducts(); }
+
+    // ===== Auth =====
+    loginBtn.onclick = async () => {
+      loginErr.textContent = ''; loginMsg.textContent='';
+      const email = (loginEmail.value||'').trim();
+      const pw = loginPassword.value;
+      if (!email || !pw) return loginErr.textContent='請輸入 Email 與密碼';
+      if (email.toLowerCase() !== allowedEmail.toLowerCase()) return loginErr.textContent='僅允許指定 Email 登入';
+      loginBtn.disabled = signupBtn.disabled = true;
+      try {
+        const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+        if (error) throw error;
+        showAdmin();
+      } catch(e){
+        loginErr.textContent = '登入失敗：' + (e?.message||e);
+      } finally{ loginBtn.disabled = signupBtn.disabled = false; }
+    };
+
+    signupBtn.onclick = async () => {
+      loginErr.textContent=''; loginMsg.textContent='';
+      const email = (loginEmail.value||'').trim();
+      const pw = loginPassword.value;
+      if (!email || !pw) return loginErr.textContent='請輸入 Email 與密碼';
+      if (email.toLowerCase() !== allowedEmail.toLowerCase()) return loginErr.textContent='僅允許指定 Email 註冊';
+      if (pw.length < 8) return loginErr.textContent='密碼至少 8 碼';
+      signupBtn.disabled = loginBtn.disabled = true;
+      try{
+        // 設定 redirect，避免 GitHub Pages 造成 Failed to fetch
+        const redirectTo = location.origin + location.pathname; // 目前頁面
+        const { data, error } = await sb.auth.signUp({ email, password: pw, options:{ emailRedirectTo: redirectTo }});
+        if (error) throw error;
+        if (!data.session){
+          loginMsg.textContent = '註冊成功！請到 Email 點擊驗證連結後再登入。';
+        } else {
+          showAdmin();
+        }
+      }catch(e){
+        loginErr.textContent = '註冊失敗：' + (e?.message||e);
+      }finally{ signupBtn.disabled = loginBtn.disabled = false; }
+    };
+
+    logoutBtn.onclick = async ()=>{ await sb.auth.signOut(); showLogin(); };
+
+    // ===== Products =====
+    async function loadProducts(){
+      const { data, error } = await sb.from('products').select('*').order('created_at', { ascending:false });
+      if (error){ console.error(error); return; }
+      products = data || [];
+      renderList();
     }
 
-    // Load products from database
-    async function loadProductsList() {
-      const { data, error } = await supabase.from('products').select('*');
-      if (error) {
-        console.error('產品資料讀取失敗:', error);
-        return;
-      }
-      productsList = data || [];
-      renderProductsList();
-    }
-
-    // Render product list table based on productsList, search, sort
-    function renderProductsList() {
-      const searchTerm = searchInput.value.trim().toLowerCase();
-      const sortOrder = sortSelect.value;
-      let filtered = productsList;
-      if (searchTerm) {
-        filtered = productsList.filter(p => {
-          const nameMatch = p.name && p.name.toLowerCase().includes(searchTerm);
-          const idMatch = p.product_id && p.product_id.toLowerCase().includes(searchTerm);
-          const tagsMatch = p.tags && Array.isArray(p.tags) && p.tags.some(tag => tag.toLowerCase().includes(searchTerm));
-          return nameMatch || idMatch || tagsMatch;
-        });
-      }
-      // sort by created_at time
-      filtered.sort((a, b) => {
-        const timeA = new Date(a.created_at).getTime();
-        const timeB = new Date(b.created_at).getTime();
-        return sortOrder === 'asc' ? (timeA - timeB) : (timeB - timeA);
+    function renderList(){
+      const q = (searchInput.value||'').toLowerCase().trim();
+      const s = sortSelect.value;
+      let list = products.filter(p=>{
+        const name = (p.name||'').toLowerCase();
+        const pid = (p.product_id||'').toLowerCase();
+        const tags = (p.tags||'').toLowerCase(); // 後台改為字串欄位，用 | 分隔
+        return !q || name.includes(q) || pid.includes(q) || tags.includes(q);
       });
-      // Build table rows
-      let rowsHtml = '';
-      for (const product of filtered) {
-        const tagsText = product.tags && Array.isArray(product.tags) ? product.tags.join(', ') : '';
-        rowsHtml += `<tr>
-          <td>${escapeHTML(product.name)}</td>
-          <td>${escapeHTML(product.product_id)}</td>
-          <td class="price-cell">${product.price !== null ? escapeHTML(product.price.toString()) : ''}</td>
-          <td>${product.category ? escapeHTML(product.category) : ''}</td>
-          <td>${product.status ? escapeHTML(product.status) : ''}</td>
-          <td>${tagsText ? escapeHTML(tagsText) : ''}</td>
+      list.sort((a,b)=>{
+        const A = new Date(a.created_at).getTime();
+        const B = new Date(b.created_at).getTime();
+        return s==='asc'? A-B : B-A;
+      });
+      tbody.innerHTML = list.map(p=>{
+        const tags = (p.tags||'');
+        return `<tr>
+          <td>${escape(p.name)}</td>
+          <td>${escape(p.product_id)}</td>
+          <td class="price-cell">${p.price??''}</td>
+          <td>${escape(p.category||'')}</td>
+          <td>${escape(p.status||'')}</td>
+          <td>${escape(tags)}</td>
           <td>
-            <button class="action-btn edit-btn" data-id="${product.id}">編輯</button>
-            <button class="action-btn copy-btn" data-id="${product.id}">複製</button>
-            <button class="action-btn delete-btn" data-id="${product.id}">刪除</button>
+            <button class="action-btn edit" data-id="${p.id}">編輯</button>
+            <button class="action-btn copy" data-id="${p.id}">複製</button>
+            <button class="action-btn delete-btn del" data-id="${p.id}">刪除</button>
           </td>
         </tr>`;
-      }
-      productsTbody.innerHTML = rowsHtml;
+      }).join('');
     }
 
-    // Escape HTML helper to prevent XSS when rendering text
-    function escapeHTML(string) {
-      if (!string) return '';
-      return String(string).replace(/[&<>"']/g, (match) => {
-        const escapeChars = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-        return escapeChars[match];
+    function escape(s){ return (s||'').toString().replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+
+    searchInput.oninput = renderList; sortSelect.onchange = renderList;
+
+    // 新增 / 編輯 / 複製
+    addBtn.onclick = ()=>openForm('add');
+    tbody.addEventListener('click', e=>{
+      const id = e.target.getAttribute('data-id');
+      if (!id) return;
+      const p = products.find(x=>x.id===id);
+      if (e.target.classList.contains('edit')) openForm('edit', p);
+      if (e.target.classList.contains('copy')) openForm('copy', p);
+      if (e.target.classList.contains('del')) removeProduct(p);
+    });
+
+    function openForm(mode, p){
+      formMode = mode; editingId = null; formErr.textContent=''; images=[]; imagesToRemove=[]; imageInput.value=''; preview.innerHTML='';
+      if (mode==='add'){ formTitle.textContent='新增商品'; form.reset(); }
+      if ((mode==='edit' || mode==='copy') && p){
+        formTitle.textContent = mode==='edit' ? '編輯商品' : '新增商品（複製）';
+        document.getElementById('name').value = p.name||'';
+        document.getElementById('product_id').value = mode==='copy' ? ((p.product_id||'')+ '-new') : (p.product_id||'');
+        document.getElementById('price').value = p.price ?? '';
+        document.getElementById('category').value = p.category||'';
+        document.getElementById('status').value = p.status||'';
+        document.getElementById('arrival_time').value = p.arrival_time||'';
+        document.getElementById('eta_text').value = p.eta||''; // 後台寫入欄位：eta
+        document.getElementById('tags').value = p.tags||'';
+        // 載入已存在圖片
+        (p.images||[]).forEach(path=>{
+          const { data } = sb.storage.from('yuyu.f86').getPublicUrl(path);
+          images.push({ file:null, path, url:data.publicUrl });
+        });
+        editingId = mode==='edit' ? p.id : null;
+        renderPreviews();
+      }
+      modal.style.display='flex';
+    }
+
+    function closeForm(){ modal.style.display='none'; formErr.textContent=''; images.forEach(i=>{ if(i.file && i.url) URL.revokeObjectURL(i.url); }); images=[]; imagesToRemove=[]; editingId=null; formMode='add'; form.reset(); }
+    cancelBtn.onclick = closeForm;
+
+    function renderPreviews(){
+      preview.innerHTML='';
+      images.forEach((it,idx)=>{
+        const wrap=document.createElement('div'); wrap.className='img-item';
+        const img=document.createElement('img'); img.src=it.url; wrap.appendChild(img);
+        const btn=document.createElement('button'); btn.className='remove-btn'; btn.type='button'; btn.textContent='×';
+        btn.onclick=()=>{ const rem=images.splice(idx,1)[0]; if(formMode==='edit' && rem && !rem.file && rem.path) imagesToRemove.push(rem.path); renderPreviews(); };
+        wrap.appendChild(btn); preview.appendChild(wrap);
       });
+      Sortable.create(preview,{ animation:150, onEnd:e=>{ const x=images.splice(e.oldIndex,1)[0]; images.splice(e.newIndex,0,x); renderPreviews(); }});
     }
 
-    // Open product form modal in given mode ('add', 'edit', 'copy'). Optionally provide product data for edit/copy.
-    async function openProductForm(mode, productData = null) {
-      formMode = mode;
-      formErrorDiv.textContent = '';
-      imagesList = [];
-      imagesToRemove = [];
-      imageInput.value = ''; // reset file input
-      imagesPreviewList.innerHTML = ''; // clear previous previews
-      if (mode === 'add') {
-        formTitle.textContent = '新增商品';
-        currentEditId = null;
-        // clear all fields
-        productForm.reset();
-      } else if (mode === 'edit' && productData) {
-        formTitle.textContent = '編輯商品';
-        currentEditId = productData.id;
-        // fill fields with productData
-        document.getElementById('name').value = productData.name || '';
-        document.getElementById('product_id').value = productData.product_id || '';
-        document.getElementById('price').value = productData.price !== null ? productData.price : '';
-        document.getElementById('category').value = productData.category || '';
-        document.getElementById('status').value = productData.status || '';
-        document.getElementById('arrival_time').value = productData.arrival_time || '';
-        document.getElementById('eta_text').value = productData.eta_text || '';
-        document.getElementById('tags').value = productData.tags && Array.isArray(productData.tags) ? productData.tags.join(', ') : '';
-        // Load existing images into imagesList as existing items
-        const imagePaths = productData.images || [];
-        for (const path of imagePaths) {
-          // get public URL for preview (bucket is public)
-          const { data } = supabase.storage.from('yuyu.f86').getPublicUrl(path);
-          const publicUrl = data.publicUrl;
-          imagesList.push({ file: null, path: path, url: publicUrl });
+    imageInput.onchange = ()=>{
+      Array.from(imageInput.files||[]).forEach(file=>{ const url=URL.createObjectURL(file); images.push({ file, url }); });
+      imageInput.value=''; renderPreviews();
+    };
+
+    form.onsubmit = async (ev)=>{
+      ev.preventDefault(); formErr.textContent=''; saveBtn.disabled=true; cancelBtn.disabled=true; saveBtn.textContent='儲存中...';
+      try{
+        const row = collectRow();
+        // 上傳新圖片
+        const uploaded=[];
+        for (const it of images){
+          if (!it.file) continue;
+          const ext = (it.file.name.split('.').pop()||'jpg').toLowerCase();
+          const fp = `${row.product_id}/${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
+          const { error } = await sb.storage.from('yuyu.f86').upload(fp, it.file, { upsert:false });
+          if (error){ if(uploaded.length) await sb.storage.from('yuyu.f86').remove(uploaded); throw error; }
+          it.path = fp; uploaded.push(fp);
         }
-        // Preview images
-        renderImagePreviews();
-      } else if (mode === 'copy' && productData) {
-        formTitle.textContent = '新增商品';
-        currentEditId = null;
-        // Fill fields with productData, but adjust as needed
-        document.getElementById('name').value = productData.name || '';
-        // Suggest new product_id by appending "-new"
-        const origId = productData.product_id || '';
-        document.getElementById('product_id').value = origId ? `${origId}-new` : '';
-        document.getElementById('price').value = productData.price !== null ? productData.price : '';
-        document.getElementById('category').value = productData.category || '';
-        document.getElementById('status').value = productData.status || '';
-        document.getElementById('arrival_time').value = productData.arrival_time || '';
-        document.getElementById('eta_text').value = productData.eta_text || '';
-        document.getElementById('tags').value = productData.tags && Array.isArray(productData.tags) ? productData.tags.join(', ') : '';
-        // Copy images: download each and create file objects for new upload
-        const imagePaths = productData.images || [];
-        for (const path of imagePaths) {
-          try {
-            const { data, error } = await supabase.storage.from('yuyu.f86').download(path);
-            if (error) {
-              console.error('下載圖片失敗:', error, path);
-              continue;
-            }
-            const blob = data;
-            const fileName = path.split('/').pop() || `image_${Date.now()}`;
-            const file = new File([blob], fileName, { type: blob.type });
-            // create object URL for preview
-            const url = URL.createObjectURL(file);
-            imagesList.push({ file: file, path: null, url: url });
-          } catch (err) {
-            console.error('複製圖片時發生錯誤:', err);
-          }
+        const paths = images.map(i=>i.path).filter(Boolean);
+        // 第一張做封面 URL
+        let img_url = null; if (paths[0]){ const { data } = sb.storage.from('yuyu.f86').getPublicUrl(paths[0]); img_url = data.publicUrl; }
+        row.images = paths; row.img_url = img_url; // 同前台欄位
+
+        let error;
+        if (formMode==='add' || formMode==='copy'){
+          ({ error } = await sb.from('products').insert(row));
+        } else if (formMode==='edit' && editingId){
+          ({ error } = await sb.from('products').update(row).eq('id', editingId));
+          // 刪除移除的舊圖
+          if (imagesToRemove.length) await sb.storage.from('yuyu.f86').remove(imagesToRemove);
         }
-        renderImagePreviews();
-      }
-      // Show modal
-      productFormModal.style.display = 'flex';
+        if (error) throw error;
+        await loadProducts(); closeForm();
+      }catch(e){ formErr.textContent='儲存失敗：' + (e?.message||e); }
+      finally{ saveBtn.disabled=false; cancelBtn.disabled=false; saveBtn.textContent='儲存'; }
+    };
+
+    function collectRow(){
+      const name = document.getElementById('name').value.trim();
+      const product_id = document.getElementById('product_id').value.trim();
+      const price = document.getElementById('price').value;
+      const category = document.getElementById('category').value.trim()||null;
+      const status = document.getElementById('status').value.trim()||null;
+      const arrival_time = document.getElementById('arrival_time').value.trim()||null;
+      const eta = document.getElementById('eta_text').value.trim()||null; // ← 資料表欄位為 eta
+      const tags = (document.getElementById('tags').value||'').split('|').map(s=>s.trim()).filter(Boolean).join('|'); // 後台統一存字串
+      if (!name || !product_id || price==='') throw new Error('請填寫必填欄位');
+      return { name, product_id, price: Number(price), category, status, arrival_time, eta, tags };
     }
 
-    // Close and reset product form modal
-    function closeProductForm() {
-      productFormModal.style.display = 'none';
-      formErrorDiv.textContent = '';
-      // Revoke any object URLs to free memory
-      for (const item of imagesList) {
-        if (item.file && item.url) {
-          URL.revokeObjectURL(item.url);
-        }
-      }
-      imagesList = [];
-      imagesToRemove = [];
-      currentEditId = null;
-      formMode = 'add';
-      productForm.reset();
+    async function removeProduct(p){
+      if (!p) return; if (!confirm(`確定刪除「${p.name}」？`)) return;
+      const { error } = await sb.from('products').delete().eq('id', p.id);
+      if (error) return alert('刪除失敗：'+error.message);
+      // 刪除圖片
+      const paths = (p.images||[]); if (paths.length) await sb.storage.from('yuyu.f86').remove(paths);
+      await loadProducts();
     }
-
-    // Render image previews from imagesList
-    function renderImagePreviews() {
-      imagesPreviewList.innerHTML = '';
-      for (let i = 0; i < imagesList.length; i++) {
-        const item = imagesList[i];
-        const img = document.createElement('img');
-        img.src = item.url;
-        img.alt = 'image';
-        const div = document.createElement('div');
-        div.className = 'img-item';
-        div.dataset.index = i;
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.className = 'remove-btn';
-        removeBtn.textContent = '×';
-        // Remove button event
-        removeBtn.onclick = () => {
-          removeImage(i);
-        };
-        div.appendChild(img);
-        div.appendChild(removeBtn);
-        imagesPreviewList.appendChild(div);
-      }
-      // Initialize or update Sortable on the preview list
-      Sortable.create(imagesPreviewList, {
-        animation: 150,
-        onEnd: function (evt) {
-          const oldIndex = evt.oldIndex;
-          const newIndex = evt.newIndex;
-          if (oldIndex !== newIndex) {
-            const movedItem = imagesList.splice(oldIndex, 1)[0];
-            imagesList.splice(newIndex, 0, movedItem);
-            renderImagePreviews();
-          }
-        }
-      });
-    }
-
-    // Remove image at index from imagesList (for both preview and future save).
-    function removeImage(index) {
-      const removedItem = imagesList.splice(index, 1)[0];
-      // If removed item is an existing image (no file, has path), mark it for deletion from storage after update
-      if (formMode === 'edit' && removedItem && !removedItem.file && removedItem.path) {
-        imagesToRemove.push(removedItem.path);
-      }
-      renderImagePreviews();
-    }
-
-    // Handle login
-    async function handleLogin() {
-      loginErrorDiv.textContent = '';
-      loginMsgDiv.textContent = '';
-      const email = loginEmailInput.value.trim();
-      const password = loginPasswordInput.value;
-      if (email.toLowerCase() !== allowedEmail.toLowerCase()) {
-        loginErrorDiv.textContent = '僅允許指定 Email 登入';
-        return;
-      }
-      if (!email || !password) {
-        loginErrorDiv.textContent = '請輸入電子郵件和密碼';
-        return;
-      }
-      loginBtn.disabled = true;
-      signupBtn.disabled = true;
-      loginBtn.textContent = '登入中...';
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      loginBtn.textContent = '登入';
-      loginBtn.disabled = false;
-      signupBtn.disabled = false;
-      if (error) {
-        let msg = error.message || '登入失敗';
-        if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('credentials')) {
-          msg = '帳號或密碼錯誤';
-        } else if (msg.toLowerCase().includes('confirm') || msg.toLowerCase().includes('email not confirmed')) {
-          msg = '帳戶尚未驗證，請至電子郵件完成驗證';
-        } else {
-          msg = '登入失敗：' + msg;
-        }
-        loginErrorDiv.textContent = msg;
-      } else if (data.session) {
-        // successful login
-        showAdminUI();
-      }
-    }
-
-    // Handle signup
-    async function handleSignup() {
-      loginErrorDiv.textContent = '';
-      loginMsgDiv.textContent = '';
-      const email = loginEmailInput.value.trim();
-      const password = loginPasswordInput.value;
-      if (email.toLowerCase() !== allowedEmail.toLowerCase()) {
-        loginErrorDiv.textContent = '僅允許指定 Email 註冊';
-        return;
-      }
-      if (!email || !password) {
-        loginErrorDiv.textContent = '請輸入電子郵件和密碼';
-        return;
-      }
-      if (password.length < 8) {
-        loginErrorDiv.textContent = '密碼至少需8位字元';
-        return;
-      }
-      loginBtn.disabled = true;
-      signupBtn.disabled = true;
-      signupBtn.textContent = '註冊中...';
-      const { data, error } = await supabase.auth.signUp({ email, password });
-      signupBtn.textContent = '註冊 (第一次使用)';
-      loginBtn.disabled = false;
-      signupBtn.disabled = false;
-      if (error) {
-        let msg = error.message || '註冊失敗';
-        if (msg.toLowerCase().includes('user already') || msg.toLowerCase().includes('exists')) {
-          msg = '此 Email 已經註冊，請直接登入';
-        } else {
-          msg = '註冊失敗：' + msg;
-        }
-        loginErrorDiv.textContent = msg;
-      } else {
-        // If confirmation email is required (session will be null)
-        if (!data.session) {
-          loginMsgDiv.textContent = '註冊成功！請前往電子郵件完成驗證後再登入。';
-        } else {
-          // If no confirmation needed, user is logged in
-          showAdminUI();
-        }
-      }
-    }
-
-    // Handle logout
-    async function handleLogout() {
-      await supabase.auth.signOut();
-      // Show login screen
-      showLoginUI();
-    }
-
-    // Handle product form submit (add/edit save)
-    async function handleSaveProduct(event) {
-      event.preventDefault();
-      formErrorDiv.textContent = '';
-      if (saveBtn.disabled) return; // avoid double submit
-      // Basic validation for required fields
-      const nameVal = document.getElementById('name').value.trim();
-      const productIdVal = document.getElementById('product_id').value.trim();
-      const priceVal = document.getElementById('price').value;
-      if (!nameVal || !productIdVal || priceVal === '') {
-        formErrorDiv.textContent = '請填寫所有必填欄位';
-        return;
-      }
-      saveBtn.disabled = true;
-      cancelBtn.disabled = true;
-      saveBtn.textContent = '儲存中...';
-      try {
-        // Prepare data for insert/update
-        const name = nameVal;
-        const product_id = productIdVal;
-        const price = priceVal === '' ? null : parseFloat(priceVal);
-        const category = document.getElementById('category').value.trim() || null;
-        const status = document.getElementById('status').value.trim() || null;
-        const arrival_time = document.getElementById('arrival_time').value.trim() || null;
-        const eta_text = document.getElementById('eta_text').value.trim() || null;
-        // Tags: split by comma and trim spaces, filter out empty
-        let tagsArr = [];
-        const tagsVal = document.getElementById('tags').value;
-        if (tagsVal) {
-          tagsArr = tagsVal.split(',').map(t => t.trim()).filter(t => t);
-        }
-        // Handle image uploads
-        // Upload any new images in imagesList (items with file property)
-        let uploadedPaths = [];
-        for (let i = 0; i < imagesList.length; i++) {
-          const item = imagesList[i];
-          if (item.file) {
-            // Generate unique file path in storage
-            const file = item.file;
-            const ext = file.name.substring(file.name.lastIndexOf('.') + 1);
-            const uniqueName = `${Date.now().toString()}_${Math.random().toString(36).substr(2,6)}.${ext}`;
-            const filePath = `${product_id}/${uniqueName}`;
-            const { error: uploadError } = await supabase.storage.from('yuyu.f86').upload(filePath, file, { upsert: false });
-            if (uploadError) {
-              // If upload fails, roll back any uploaded in this loop
-              console.error('圖片上傳失敗:', uploadError, file.name);
-              if (uploadedPaths.length > 0) {
-                // Remove any images that were uploaded before failure
-                await supabase.storage.from('yuyu.f86').remove(uploadedPaths);
-              }
-              throw new Error('圖片上傳失敗，請確認網路後重試');
-            }
-            // On success, update item path and push to uploadedPaths list
-            item.path = filePath;
-            uploadedPaths.push(filePath);
-          }
-        }
-        // Build final images path array for database
-        const imagesPathsArray = imagesList.map(item => item.path).filter(p => p);
-        // Determine img_url (use first image if available)
-        let img_url = null;
-        if (imagesPathsArray.length > 0) {
-          const firstPath = imagesPathsArray[0];
-          const { data } = supabase.storage.from('yuyu.f86').getPublicUrl(firstPath);
-          img_url = data.publicUrl || null;
-        }
-        let dbError = null;
-        let newProduct = null;
-        if (formMode === 'add' || formMode === 'copy') {
-          // Insert new product
-          const { data, error } = await supabase.from('products').insert([{
-            name, product_id, price, category, status,
-            arrival_time, eta_text,
-            img_url,
-            images: imagesPathsArray,
-            tags: tagsArr
-          }]).select().single();
-          dbError = error;
-          newProduct = data;
-        } else if (formMode === 'edit' && currentEditId) {
-          // Update existing product
-          const { data, error } = await supabase.from('products').update({
-            name, product_id, price, category, status,
-            arrival_time, eta_text,
-            img_url,
-            images: imagesPathsArray,
-            tags: tagsArr
-          }).eq('id', currentEditId).select().single();
-          dbError = error;
-          newProduct = data;
-        }
-        if (dbError) {
-          // On DB error, remove any newly uploaded images to avoid orphan files
-          if (uploadedPaths.length > 0) {
-            await supabase.storage.from('yuyu.f86').remove(uploadedPaths);
-          }
-          throw dbError;
-        }
-        // Database operation successful
-        if (formMode === 'add' || formMode === 'copy') {
-          // Add new product to local list
-          if (newProduct) {
-            productsList.push(newProduct);
-          }
-        } else if (formMode === 'edit') {
-          // Remove any images that were marked for deletion (imagesToRemove)
-          if (imagesToRemove.length > 0) {
-            const { error: removeErr } = await supabase.storage.from('yuyu.f86').remove(imagesToRemove);
-            if (removeErr) {
-              console.warn('部分舊圖片刪除失敗，請稍後至儲存空間檢查:', removeErr);
-            }
-          }
-          // Update local list entry
-          if (newProduct) {
-            const idx = productsList.findIndex(p => p.id === newProduct.id);
-            if (idx !== -1) {
-              productsList[idx] = newProduct;
-            }
-          }
-        }
-        // Re-render list
-        renderProductsList();
-        // Close modal
-        closeProductForm();
-      } catch (err) {
-        console.error('儲存商品失敗:', err);
-        formErrorDiv.textContent = (err.message) ? err.message : '儲存失敗，請重試';
-      } finally {
-        saveBtn.textContent = '儲存';
-        saveBtn.disabled = false;
-        cancelBtn.disabled = false;
-      }
-    }
-
-    // Delete product
-    async function deleteProduct(productId) {
-      if (!confirm('確定要刪除此商品？')) {
-        return;
-      }
-      try {
-        const product = productsList.find(p => p.id === productId);
-        const { error } = await supabase.from('products').delete().eq('id', productId);
-        if (error) {
-          throw error;
-        }
-        // If deletion successful, remove from local list
-        productsList = productsList.filter(p => p.id !== productId);
-        // Remove images from storage
-        if (product) {
-          let removePaths = [];
-          if (product.images && Array.isArray(product.images)) {
-            removePaths = removePaths.concat(product.images);
-          }
-          if (product.img_url) {
-            // If img_url is separate and not already included in images array
-            let urlPath = product.img_url;
-            const idx = urlPath.indexOf('/yuyu.f86/');
-            if (idx !== -1) {
-              // Extract path after bucket name
-              urlPath = urlPath.substring(idx + '/yuyu.f86/'.length);
-              if (!removePaths.includes(urlPath)) {
-                removePaths.push(urlPath);
-              }
-            }
-          }
-          if (removePaths.length > 0) {
-            const { error: removeErr } = await supabase.storage.from('yuyu.f86').remove(removePaths);
-            if (removeErr) {
-              console.warn('刪除圖片時發生錯誤:', removeErr);
-            }
-          }
-        }
-        // Re-render list
-        renderProductsList();
-      } catch (err) {
-        alert('刪除失敗：' + (err.message || err));
-      }
-    }
-
-    // Event listeners
-    loginBtn.addEventListener('click', handleLogin);
-    signupBtn.addEventListener('click', handleSignup);
-    logoutBtn.addEventListener('click', handleLogout);
-    searchInput.addEventListener('keyup', renderProductsList);
-    sortSelect.addEventListener('change', renderProductsList);
-    addBtn.addEventListener('click', () => {
-      openProductForm('add');
-    });
-    cancelBtn.addEventListener('click', () => {
-      // If cancel during copy mode and we created object URLs, revoke them
-      closeProductForm();
-    });
-    productForm.addEventListener('submit', handleSaveProduct);
-    imageInput.addEventListener('change', () => {
-      // User selected new images
-      const files = Array.from(imageInput.files || []);
-      if (files.length > 0) {
-        for (const file of files) {
-          const url = URL.createObjectURL(file);
-          imagesList.push({ file: file, path: null, url: url });
-        }
-        renderImagePreviews();
-      }
-      // Reset file input to allow selecting the same file again if needed
-      imageInput.value = '';
-    });
-    // Delegate table action buttons (edit, copy, delete)
-    productsTbody.addEventListener('click', (e) => {
-      const target = e.target;
-      if (target.classList.contains('edit-btn')) {
-        const id = target.getAttribute('data-id');
-        const product = productsList.find(p => p.id === id);
-        if (product) {
-          openProductForm('edit', product);
-        }
-      } else if (target.classList.contains('copy-btn')) {
-        const id = target.getAttribute('data-id');
-        const product = productsList.find(p => p.id === id);
-        if (product) {
-          openProductForm('copy', product);
-        }
-      } else if (target.classList.contains('delete-btn')) {
-        const id = target.getAttribute('data-id');
-        if (id) {
-          deleteProduct(id);
-        }
-      }
-    });
   </script>
 </body>
 </html>
