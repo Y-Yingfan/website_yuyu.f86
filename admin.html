@@ -1,163 +1,563 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>商品後台管理（連線診斷版）</title>
-<style>
-  :root{--bg:#f6f4ef;--panel:#fff;--ink:#2f2f2f;--muted:#6b6a62;--line:#e7e2d9;--accent:#c2a35d;--ok:#14532d;--warn:#7c2d12;--err:#881337}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif}
-  .wrap{max-width:1000px;margin:20px auto;padding:0 14px}
-  h1{margin:6px 0 16px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:0 10px 28px rgba(0,0,0,.06);margin-bottom:14px}
-  .status{padding:10px 12px;border-radius:10px;margin:10px 0;font-size:14px;white-space:pre-wrap}
-  .ok{background:#eefcf3;border:1px solid #bbf7d0;color:var(--ok)}
-  .warn{background:#fff7ed;border:1px solid #fed7aa;color:var(--warn)}
-  .err{background:#fff1f2;border:1px solid #fecdd3;color:var(--err)}
-  label{display:block;margin:8px 0 6px;color:var(--muted)}
-  input{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .btn{padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer}
-  .btn.primary{background:var(--accent);color:#fff;border:none}
-  .muted{color:var(--muted)}
-  .flex{display:flex;gap:8px;align-items:center}
-  .right{margin-left:auto}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>商品後台管理</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f5f3ef;--panel:#ffffff;--ink:#2f2f2f;--muted:#6b6a62;--line:#e6e2da;--accent:#c2a35d;--danger:#b42318;--shadow:0 10px 28px rgba(0,0,0,.08)
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC",ui-sans-serif,system-ui,-apple-system,"Microsoft JhengHei",sans-serif}
+    .wrap{max-width:1100px;margin:0 auto;padding:18px}
+    h1{margin:6px 0 12px;font-size:clamp(22px,4vw,30px)}
+    /* card */
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px;margin:10px 0}
+    .muted{color:var(--muted)}
+    .danger{color:var(--danger)}
+    .row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    label{display:block;margin:6px 0 4px;color:var(--muted);font-size:14px}
+    input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+    .btn{padding:10px 14px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer}
+    .btn.primary{background:var(--accent);color:#fff;border:none}
+    .btn.ghost{background:#fff}
+    .btn.danger{background:var(--danger);color:#fff;border:none}
+    .toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between}
+    .right{display:flex;gap:8px;align-items:center}
+    .hint{font-size:13px;color:var(--muted)}
+
+    /* grid */
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+    .pitem{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+    .pitem .pic{aspect-ratio:4/3;background:linear-gradient(180deg,#fff,#f0ede6);display:grid;place-items:center}
+    .pitem img{width:100%;height:100%;object-fit:cover}
+    .pitem .meta{padding:10px}
+    .pitem .tags{margin-top:6px;color:var(--muted);font-size:12px}
+    .actions{display:flex;gap:8px;margin-top:8px}
+
+    /* modal */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);z-index:99;padding:16px}
+    .modal.show{display:flex}
+    .panel{width:min(720px,100%);background:#fff;border-radius:14px;padding:16px;max-height:90vh;overflow:auto}
+    .images{display:flex;flex-wrap:wrap;gap:10px}
+    .thumb{position:relative}
+    .thumb img{width:110px;height:110px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+    .thumb button{position:absolute;right:-6px;top:-6px;border:none;background:#000a;color:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer}
+
+    /* status */
+    .status{padding:10px 12px;border-radius:10px;margin-top:8px;border:1px solid var(--line);background:#fff}
+    .ok{color:#1a7f37}
+    .bad{color:#b42318}
+  </style>
 </head>
 <body>
 <div class="wrap">
   <h1>商品後台管理</h1>
 
-  <!-- 連線診斷 -->
-  <div id="diagA" class="status warn">A) 檢查 /auth/v1/health …</div>
-  <div id="diagB" class="status warn">B) 檢查 supabase-js 查表 …</div>
-  <div id="diagC" class="status warn">C) 檢查 REST（帶 apikey + Authorization）…</div>
+  <!-- 連線檢查 -->
+  <div id="conn" class="status">連線檢查中…</div>
 
-  <div class="card">
+  <!-- 登入 / 註冊 -->
+  <div class="card" id="authCard">
+    <div class="toolbar">
+      <strong>登入</strong>
+      <div class="right"><span id="who" class="muted"></span><button id="btnLogout" class="btn">登出</button></div>
+    </div>
+    <div id="authArea">
+      <div class="row">
+        <div>
+          <label>電子信箱</label>
+          <input id="email" placeholder="you@example.com"/>
+        </div>
+        <div>
+          <label>密碼（至少 8 碼）</label>
+          <input id="password" type="password" />
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button id="btnSignIn" class="btn primary">登入</button>
+        <button id="btnSignUp" class="btn">註冊（第一次使用）</button>
+        <span class="hint">僅允許管理者 Email 登入：<b id="adminEmailText"></b></span>
+      </div>
+      <div id="authMsg" class="hint" style="margin-top:6px"></div>
+    </div>
+  </div>
+
+  <!-- 編輯表單 -->
+  <div class="card" id="formCard" style="display:none">
+    <div class="toolbar">
+      <strong id="formTitle">新增 / 編輯商品</strong>
+      <div class="right">
+        <button id="btnResetForm" class="btn">清空表單</button>
+        <button id="btnSave" class="btn primary">儲存</button>
+        <button id="btnDelete" class="btn danger" style="display:none">刪除</button>
+      </div>
+    </div>
+
     <div class="row">
       <div>
-        <label>Email</label>
-        <input id="email" type="email" placeholder="你要登入/註冊的 Email" />
+        <label>商品名稱</label>
+        <input id="name"/>
       </div>
       <div>
-        <label>密碼（至少 8 碼）</label>
-        <input id="password" type="password" placeholder="Password" />
+        <label>商品編號（自訂 ID）</label>
+        <input id="pid" placeholder="例如 A001"/>
       </div>
     </div>
-    <div class="flex" style="margin-top:10px">
-      <button id="btnLogin"  class="btn primary">登入</button>
-      <button id="btnSignup" class="btn">註冊（第一次使用）</button>
-      <span class="muted">僅允許管理者 Email：<b id="adminHint"></b></span>
-      <button id="btnLogout" class="btn right">登出</button>
+
+    <div class="row">
+      <div>
+        <label>價格（整數）</label>
+        <input id="price" type="number" min="0"/>
+      </div>
+      <div>
+        <label>分類</label>
+        <input id="category" placeholder="例如：香氛 / 藥妝 / MUJI"/>
+      </div>
     </div>
-    <div id="authMsg" class="muted" style="margin-top:8px"></div>
+
+    <div class="row">
+      <div>
+        <label>狀態</label>
+        <select id="status">
+          <option>現貨</option>
+          <option>預購</option>
+        </select>
+      </div>
+      <div>
+        <label>到貨（例如：2–4 天 / 約 10–14 天）</label>
+        <input id="arrival"/>
+      </div>
+    </div>
+
+    <div>
+      <label>到貨說明（選填）</label>
+      <input id="eta"/>
+    </div>
+
+    <div>
+      <label>標籤（以逗號分隔，例：熱賣, 送禮）</label>
+      <input id="tags"/>
+    </div>
+
+    <div>
+      <label>商品圖片（可多張，拖曳排序）</label>
+      <input id="file" type="file" accept="image/*" multiple />
+      <div id="imgs" class="images" style="margin-top:8px"></div>
+      <div class="hint">會上傳到 Storage bucket：<code>yuyu.f86</code>；首張圖自動存為 <code>img_url</code>。</div>
+    </div>
   </div>
 
-  <div class="card">
-    <div class="muted">連線正常後這裡再載入商品管理（先把連線搞定）。</div>
+  <!-- 商品清單 -->
+  <div class="card" id="listCard" style="display:none">
+    <div class="toolbar">
+      <strong>商品清單</strong>
+      <div class="right">
+        <input id="kw" placeholder="搜尋名稱 / 編號 / 標籤" style="width:240px"/>
+        <select id="sort">
+          <option value="new">上架：新 → 舊</option>
+          <option value="old">上架：舊 → 新</option>
+          <option value="low">價格：低 → 高</option>
+          <option value="high">價格：高 → 低</option>
+        </select>
+        <button id="btnReload" class="btn">重新整理</button>
+        <button id="btnNew" class="btn primary">新增商品</button>
+      </div>
+    </div>
+    <div id="grid" class="grid"></div>
   </div>
+
 </div>
 
+<!-- Supabase & SortableJS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 <script>
-/* =================== 這段已改成你提供的值 =================== */
+/* ====================== 固定設定（已替你填好） ====================== */
 const SUPABASE_URL = 'https://llbpmqyjigovxixeohzr.supabase.co';
-const SUPABASE_KEY =  'sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB'; // ← 貼 llbpm… 專案的 anon（Legacy）或 sb_publishable_ key（同專案）
-const ADMIN_EMAIL  = 'lelouvre.yu@gmail.com';
-const BUCKET       = 'yuyu.f86';
-/* ========================================================== */
+const SUPABASE_ANON_KEY = 'sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';
+const ADMIN_EMAIL = 'lelouvre.yu@gmail.com';
+const BUCKET = 'yuyu.f86';
+/* ================================================================== */
 
-document.getElementById('adminHint').textContent = ADMIN_EMAIL;
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 建 supabase-js client（會自動夾帶 apikey 與 Authorization）
-const { createClient } = window.supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+/* ===== DOM ===== */
+const connBox = document.getElementById('conn');
 
-// ====== 連線診斷 ======
-async function diagAuthHealth(){
-  const box = document.getElementById('diagA');
+const authCard = document.getElementById('authCard');
+const authArea = document.getElementById('authArea');
+const who = document.getElementById('who');
+const email = document.getElementById('email');
+const password = document.getElementById('password');
+const btnSignIn = document.getElementById('btnSignIn');
+const btnSignUp = document.getElementById('btnSignUp');
+const btnLogout = document.getElementById('btnLogout');
+const authMsg = document.getElementById('authMsg');
+document.getElementById('adminEmailText').textContent = ADMIN_EMAIL;
+
+const formCard = document.getElementById('formCard');
+const listCard = document.getElementById('listCard');
+const formTitle = document.getElementById('formTitle');
+const nameEl = document.getElementById('name');
+const pid = document.getElementById('pid');
+const price = document.getElementById('price');
+const category = document.getElementById('category');
+const statusEl = document.getElementById('status');
+const arrival = document.getElementById('arrival');
+const eta = document.getElementById('eta');
+const tags = document.getElementById('tags');
+const file = document.getElementById('file');
+const imgs = document.getElementById('imgs');
+const btnResetForm = document.getElementById('btnResetForm');
+const btnSave = document.getElementById('btnSave');
+const btnDelete = document.getElementById('btnDelete');
+
+const kw = document.getElementById('kw');
+const sort = document.getElementById('sort');
+const btnReload = document.getElementById('btnReload');
+const btnNew = document.getElementById('btnNew');
+const grid = document.getElementById('grid');
+
+/* ===== 狀態 ===== */
+let PRODUCTS = [];
+let editingId = null;
+let imagesList = [];  // {file?, url, path?}
+let imagesToRemove = []; // edit 時要刪除的舊圖路徑
+
+/* ===== 共用 ===== */
+function ok(m){ connBox.innerHTML = `<span class="ok">✓</span> ${m}`; }
+function bad(m){ connBox.innerHTML = `<span class="bad">✗</span> ${m}`; }
+
+/* ===== 1) 連線檢查（用 products 表真的 select 一次） ===== */
+(async function checkConnection(){
   try{
-    const r = await fetch(`${SUPABASE_URL}/auth/v1/health`, { mode:'cors' });
-    const t = await r.text().catch(()=> '');
-    if(r.ok){
-      box.className = 'status ok';
-      box.textContent = `A) /auth/v1/health ✔ 200\n${t||'(OK)'}`;
-    }else{
-      box.className = 'status err';
-      box.textContent = `A) /auth/v1/health ❌ ${r.status}\n回應：${t||'(無內容)'}\n→ 這一步不需要 key。這裡 401/403/404 多半是 URL 打錯或網路被擋（Origin 未被允許）。`;
-    }
+    const { data, error } = await sb.from('products').select('id').limit(1);
+    if(error) throw error;
+    ok('已連線 Supabase，開始載入介面。');
   }catch(e){
-    box.className = 'status err';
-    box.textContent = `A) /auth/v1/health ❌ 例外\n${e?.message||e}`;
+    bad('無法連線 Supabase：' + (e?.message||e));
+  }
+})();
+
+/* ===== 2) Auth 狀態 ===== */
+async function refreshAuth(){
+  const { data:{ user } } = await sb.auth.getUser();
+  if(user){
+    who.textContent = user.email || '';
+    authArea.style.display = 'none';
+    formCard.style.display = '';
+    listCard.style.display = '';
+    loadProducts();
+  }else{
+    who.textContent = '';
+    authArea.style.display = '';
+    formCard.style.display = 'none';
+    listCard.style.display = 'none';
   }
 }
-
-async function diagSelectViaClient(){
-  const box = document.getElementById('diagB');
-  try{
-    const { data, error, status } = await sb.from('products').select('id').limit(1);
-    if(error){
-      box.className = 'status err';
-      box.textContent = `B) supabase-js 查表 ❌（status 可能=${status}）\n${error.message}`;
-    }else{
-      box.className = 'status ok';
-      box.textContent = `B) supabase-js 查表 ✔\n取到 ${data?.length||0} 筆`;
-    }
-  }catch(e){
-    box.className = 'status err';
-    box.textContent = `B) supabase-js 查表 ❌ 例外\n${e?.message||e}`;
+btnSignIn.onclick = async()=>{
+  authMsg.textContent = '';
+  if((email.value||'').toLowerCase()!==ADMIN_EMAIL.toLowerCase()){
+    authMsg.textContent = '僅允許指定 Email 登入。';
+    return;
   }
+  const { error } = await sb.auth.signInWithPassword({ email: email.value, password: password.value });
+  if(error){ authMsg.textContent = '登入失敗：'+error.message; return; }
+  refreshAuth();
+};
+btnSignUp.onclick = async()=>{
+  authMsg.textContent = '';
+  if((email.value||'').toLowerCase()!==ADMIN_EMAIL.toLowerCase()){
+    authMsg.textContent = '僅允許指定 Email 註冊。';
+    return;
+  }
+  if((password.value||'').length<8){ authMsg.textContent='密碼至少 8 碼'; return; }
+  const { data, error } = await sb.auth.signUp({ email: email.value, password: password.value });
+  if(error){ authMsg.textContent = '註冊失敗：'+error.message; return; }
+  authMsg.textContent = data.session? '註冊成功並已登入' : '註冊成功，請至 Email 完成驗證後再登入。';
+  refreshAuth();
+};
+btnLogout.onclick = async()=>{ await sb.auth.signOut(); refreshAuth(); };
+refreshAuth();
+
+/* ===== 3) 商品 CRUD ===== */
+function resetForm(){
+  editingId = null;
+  formTitle.textContent = '新增 / 編輯商品';
+  nameEl.value = pid.value = arrival.value = eta.value = tags.value = '';
+  price.value = '';
+  statusEl.value = '現貨';
+  category.value = '';
+  imgs.innerHTML = '';
+  imagesList = [];
+  imagesToRemove = [];
+  btnDelete.style.display='none';
+}
+btnResetForm.onclick = resetForm;
+
+new Sortable(imgs,{ animation:150, onEnd(){
+  // 依 DOM 順序重排 imagesList
+  const order = Array.from(imgs.querySelectorAll('.thumb')).map(el=>+el.dataset.idx);
+  imagesList = order.map(i=>imagesList[i]);
+  renderThumbs();
+}});
+file.addEventListener('change', ()=>{
+  const files = Array.from(file.files||[]);
+  for(const f of files){
+    const url = URL.createObjectURL(f);
+    imagesList.push({ file:f, url });
+  }
+  renderThumbs();
+  file.value = '';
+});
+function renderThumbs(){
+  imgs.innerHTML='';
+  imagesList.forEach((it,idx)=>{
+    const d=document.createElement('div');
+    d.className='thumb';
+    d.dataset.idx=idx;
+    d.innerHTML=`<img src="${it.url}"><button title="移除">×</button>`;
+    d.querySelector('button').onclick=()=>{
+      // 已存在的舊圖要記錄刪除
+      if(!it.file && it.path) imagesToRemove.push(it.path);
+      // revoke url
+      try{ if(it.file && it.url) URL.revokeObjectURL(it.url); }catch{}
+      imagesList.splice(idx,1);
+      renderThumbs();
+    };
+    imgs.appendChild(d);
+  });
 }
 
-async function diagRestFetch(){
-  const box = document.getElementById('diagC');
+async function uploadNewImages(productId){
+  // 上傳新圖，回傳所有路徑（含舊圖）
+  const paths=[];
+  // 先把舊有 path 加回去（保留）
+  for(const it of imagesList){ if(it.path) paths.push(it.path); }
+  for(const it of imagesList){
+    if(!it.file) continue;
+    const ext = (it.file.name.split('.').pop()||'jpg').toLowerCase();
+    const fileName = `${Date.now()}_${Math.random().toString(36).slice(2,7)}.${ext}`;
+    const path = `${productId}/${fileName}`;
+    const { error } = await sb.storage.from(BUCKET).upload(path, it.file, { upsert:false });
+    if(error) throw error;
+    it.path = path;
+    paths.push(path);
+  }
+  return paths;
+}
+
+btnSave.onclick = async()=>{
+  // 檢查
+  if(!nameEl.value.trim() || !pid.value.trim()){ alert('請填商品名稱與商品編號'); return; }
+  const dataRow = {
+    name: nameEl.value.trim(),
+    product_id: pid.value.trim(),
+    price: price.value? Number(price.value): null,
+    category: category.value.trim()||null,
+    status: statusEl.value,
+    arrival_time: arrival.value.trim()||null,
+    eta_text: eta.value.trim()||null,
+    // tags 支援字串：逗號分隔
+    tags: tags.value.trim()
+  };
+
   try{
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/products?select=id&limit=1`,{
-      mode:'cors',
-      headers:{
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`
+    // 先處理圖片
+    const paths = await uploadNewImages(dataRow.product_id);
+    dataRow.images = paths;
+    // 主要展示圖
+    if(paths.length){
+      const { data } = sb.storage.from(BUCKET).getPublicUrl(paths[0]);
+      dataRow.img_url = data.publicUrl;
+    }else{
+      dataRow.img_url = null;
+    }
+
+    if(editingId){
+      const { data, error } = await sb.from('products').update(dataRow).eq('id', editingId).select().single();
+      if(error) throw error;
+      // 刪除被移除的舊圖
+      if(imagesToRemove.length){
+        await sb.storage.from(BUCKET).remove(imagesToRemove);
       }
-    });
-    const t = await r.text().catch(()=> '');
-    if(r.status===200){
-      box.className = 'status ok';
-      box.textContent = `C) REST ✔ 200（帶 apikey + Authorization）\n${t||'(OK)'}`;
     }else{
-      box.className = 'status err';
-      box.textContent = `C) REST ❌ ${r.status}\n${t}\n→ 這裡 401 幾乎都是「key 不是這個專案的」，或 key 前後有看不到的空白/換行；請重新複製 llbpm… 專案的 anon（Legacy）或 sb_publishable_ key 貼上。`;
+      const { data, error } = await sb.from('products').insert(dataRow).select().single();
+      if(error) throw error;
     }
+
+    alert('已儲存');
+    resetForm();
+    loadProducts();
   }catch(e){
-    box.className = 'status err';
-    box.textContent = `C) REST ❌ 例外\n${e?.message||e}`;
+    console.error(e);
+    alert('儲存失敗：'+(e?.message||e));
   }
+};
+
+btnDelete.onclick = async()=>{
+  if(!editingId) return;
+  if(!confirm('確定要刪除此商品？')) return;
+  // 找出此商品所有圖路徑
+  const row = PRODUCTS.find(x=>x.id===editingId);
+  try{
+    const { error } = await sb.from('products').delete().eq('id', editingId);
+    if(error) throw error;
+    const removeList = [];
+    if(row?.images?.length) removeList.push(...row.images);
+    // 若 img_url 不是 images 陣列內，也嘗試剖析路徑加刪
+    if(row?.img_url && (!row.images || !row.images.length)){
+      const m = row.img_url.split('/'+BUCKET+'/')[1];
+      if(m) removeList.push(m);
+    }
+    if(removeList.length) await sb.storage.from(BUCKET).remove(removeList);
+    alert('已刪除');
+    resetForm();
+    loadProducts();
+  }catch(e){
+    alert('刪除失敗：'+(e?.message||e));
+  }
+};
+
+/* ===== 讀取、渲染 ===== */
+btnReload.onclick = ()=>loadProducts();
+btnNew.onclick = ()=>{ resetForm(); window.scrollTo({top:0,behavior:'smooth'}); };
+kw.oninput = ()=>render();
+sort.onchange = ()=>render();
+
+async function loadProducts(){
+  const { data, error } = await sb.from('products')
+    .select('*')
+    .order('created_at', { ascending:false });
+  if(error){ bad('讀取商品失敗：'+error.message); PRODUCTS=[]; }
+  else{ ok('已載入商品清單'); PRODUCTS = data||[]; }
+  render();
+}
+function toTagString(t){
+  // 相容：資料庫可能是 text 或 text[]
+  if(Array.isArray(t)) return t.join(', ');
+  return t||'';
+}
+function render(){
+  const q = (kw.value||'').toLowerCase().trim();
+  let list = (PRODUCTS||[]).filter(r=>{
+    const tags = toTagString(r.tags).toLowerCase();
+    return !q || ( (r.name||'').toLowerCase().includes(q)
+      || (r.product_id||'').toLowerCase().includes(q)
+      || tags.includes(q) );
+  });
+  const s = sort.value;
+  if(s==='new') list.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  if(s==='old') list.sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+  if(s==='low') list.sort((a,b)=>(+a.price||0)-(+b.price||0));
+  if(s==='high') list.sort((a,b)=>(+b.price||0)-(+a.price||0));
+
+  if(!list.length){
+    grid.innerHTML = `<div class="status">目前沒有資料。</div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(r=>{
+    const first = (r.images && r.images[0]) ? (sb.storage.from(BUCKET).getPublicUrl(r.images[0]).data.publicUrl) : (r.img_url||'');
+    const tags = toTagString(r.tags);
+    return `<article class="pitem" data-id="${r.id}">
+      <div class="pic">${first?`<img src="${first}" alt="${r.name||''}">`:`<div class="muted" style="padding:20px">(無圖片)</div>`}</div>
+      <div class="meta">
+        <div style="display:flex;justify-content:space-between;gap:8px">
+          <strong>${r.name||''}</strong>
+          <span class="muted">${r.product_id||''}</span>
+        </div>
+        <div>$${Number(r.price||0).toLocaleString('zh-TW')}・${r.category||''}・${r.status||''}</div>
+        <div class="muted">到貨：${r.arrival_time||'-'} ${r.eta_text?('・'+r.eta_text):''}</div>
+        <div class="tags">${tags}</div>
+        <div class="actions">
+          <button class="btn ghost" data-act="edit">編輯</button>
+          <button class="btn ghost" data-act="copy">複製</button>
+          <button class="btn danger" data-act="del">刪除</button>
+        </div>
+      </div>
+    </article>`;
+  }).join('');
+
+  grid.querySelectorAll('[data-act]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const card = btn.closest('.pitem'); const id = card.dataset.id;
+      const act = btn.dataset.act; const row = PRODUCTS.find(x=>x.id===id);
+      if(!row) return;
+      if(act==='edit') openEdit(row);
+      if(act==='copy') openCopy(row);
+      if(act==='del'){ editingId=id; btnDelete.click(); }
+    };
+  });
 }
 
-diagAuthHealth().then(diagSelectViaClient).then(diagRestFetch);
+function openEdit(r){
+  resetForm();
+  editingId = r.id;
+  formTitle.textContent = '編輯商品';
+  btnDelete.style.display='';
+  nameEl.value = r.name||'';
+  pid.value = r.product_id||'';
+  price.value = r.price||'';
+  category.value = r.category||'';
+  statusEl.value = r.status||'現貨';
+  arrival.value = r.arrival_time||'';
+  eta.value = r.eta_text||'';
+  tags.value = toTagString(r.tags);
+  imagesList=[];
+  if(r.images && r.images.length){
+    r.images.forEach(p=>{
+      const publicUrl = sb.storage.from(BUCKET).getPublicUrl(p).data.publicUrl;
+      imagesList.push({ url:publicUrl, path:p });
+    });
+  }else if(r.img_url){
+    imagesList=[{ url:r.img_url }]; // 只有單一 img_url
+  }
+  renderThumbs();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+async function openCopy(r){
+  resetForm();
+  formTitle.textContent='複製商品（新增）';
+  nameEl.value = r.name||'';
+  pid.value = (r.product_id||'') ? (r.product_id+'-new') : '';
+  price.value = r.price||'';
+  category.value = r.category||'';
+  statusEl.value = r.status||'現貨';
+  arrival.value = r.arrival_time||'';
+  eta.value = r.eta_text||'';
+  tags.value = toTagString(r.tags);
 
-// ====== 登入/註冊/登出（僅測通即可） ======
-const q = s=>document.querySelector(s);
-q('#btnLogin').onclick = async()=>{
-  q('#authMsg').textContent='';
-  const email=(q('#email').value||'').trim();
-  const pass = q('#password').value||'';
-  if(email.toLowerCase()!==ADMIN_EMAIL.toLowerCase()){ q('#authMsg').textContent='僅允許指定 Email 登入'; return; }
-  if(!email||!pass){ q('#authMsg').textContent='請輸入 Email 與密碼'; return; }
-  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-  q('#authMsg').textContent = error? `登入失敗：${error.message}`:'登入成功';
-};
-q('#btnSignup').onclick = async()=>{
-  q('#authMsg').textContent='';
-  const email=(q('#email').value||'').trim();
-  const pass = q('#password').value||'';
-  if(email.toLowerCase()!==ADMIN_EMAIL.toLowerCase()){ q('#authMsg').textContent='僅允許指定 Email 註冊'; return; }
-  if(!email||!pass){ q('#authMsg').textContent='請輸入 Email 與密碼'; return; }
-  if(pass.length<8){ q('#authMsg').textContent='密碼至少 8 碼'; return; }
-  const { data, error } = await sb.auth.signUp({ email, password: pass });
-  q('#authMsg').textContent = error? `註冊失敗：${error.message}` : (data.session?'註冊成功並已登入':'註冊成功，請到信箱驗證後登入');
-};
-q('#btnLogout').onclick = async()=>{ await sb.auth.signOut(); q('#authMsg').textContent='已登出'; };
+  // 把舊圖下載成 File 再上傳（使用者儲存時才真的上傳）
+  imagesList=[];
+  const sourcePaths = r.images && r.images.length ? r.images : null;
+  if(sourcePaths){
+    for(const path of sourcePaths){
+      try{
+        const { data, error } = await sb.storage.from(BUCKET).download(path);
+        if(error) continue;
+        const fname = path.split('/').pop();
+        const file = new File([data], fname, { type: data.type || 'image/*' });
+        const url = URL.createObjectURL(file);
+        imagesList.push({ file, url });
+      }catch(_){}
+    }
+  }else if(r.img_url){
+    try{
+      const res = await fetch(r.img_url); const blob = await res.blob();
+      const file = new File([blob], 'image.jpg', { type: blob.type });
+      const url = URL.createObjectURL(file);
+      imagesList.push({ file, url });
+    }catch(_){}
+  }
+  renderThumbs();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 </script>
 </body>
 </html>
-
