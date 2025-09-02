@@ -259,13 +259,20 @@
       });
     }
 
-    async function fetchProducts(){
-      const { data, error } = await supabaseClient
-        .from('products')
-        .select('id, product_id, name, price, original_price, category, status, arrival_time, eta_text, tags, images, img_url, created_at');
-      if(error){ console.error(error); return []; }
-      return data || [];
+  async function fetchProducts(){
+    const { data, error } = await supabaseClient
+      .from('products')
+      // 只選存在的欄位（去掉 original_price）
+      .select('id, product_id, name, price, category, status, arrival_time, eta_text, tags, images, img_url, created_at');
+    if(error){
+      console.error('讀取 products 失敗：', error);
+      // 也顯示在頁面上，方便你看
+      document.getElementById('emptyTip').style.display = 'block';
+      document.getElementById('emptyTip').textContent = '商品資料載入失敗：' + (error.message || '');
+      return [];
     }
+    return data || [];
+  }
 
     async function enterShop(){
       document.getElementById('loading').style.display='none';
@@ -309,3 +316,4 @@
   </script>
 </body>
 </html>
+
