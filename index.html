@@ -5,12 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>旅游人生選物代購｜Select Shop</title>
 <style>
-  :root{
-    --bg:#f7f3ef;--paper:#fffdf9;--card:#fff;--ink:#2b2b2b;--muted:#7a7267;
-    --brand:#8B5E34;--brand-2:#C2A27A;--accent:#7F8C5B;--border:#eadfcd;
-    --shadow:0 12px 30px rgba(139,94,52,.08);--radius:16px;--maxw:1100px;
-    --gap:16px;--thumb-h:170px
-  }
+  :root{--bg:#f7f3ef;--paper:#fffdf9;--card:#fff;--ink:#2b2b2b;--muted:#7a7267;--brand:#8B5E34;--brand-2:#C2A27A;--accent:#7F8C5B;--border:#eadfcd;--shadow:0 12px 30px rgba(139,94,52,.08);--radius:16px;--maxw:1100px;--gap:16px;--thumb-h:170px}
   *{box-sizing:border-box}
   body{margin:0;background:linear-gradient(180deg,#f8f5f1 0%, var(--bg) 100%);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",Arial}
   a{color:var(--brand)} img{display:block;max-width:100%}
@@ -31,14 +26,13 @@
   .card{border:1px solid var(--border);border-radius:var(--radius);background:var(--card);overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:.08s}
   .card:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(139,94,52,.12)}
   .thumb{height:var(--thumb-h);background:#f2eee7;display:flex;align-items:center;justify-content:center}
-  .thumb img{width:100%;height:100%;object-fit:contain} /* 不裁切，整張可見 */
+  .thumb img{width:100%;height:100%;object-fit:contain}
   .pad{padding:12px 14px}
   .name{font-size:14px;line-height:1.35;margin:0 0 6px}
   .price{color:#b03c2f;font-weight:800}
   .cat{margin-top:4px;font-size:12px;color:var(--muted)}
   #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted)}
   #emptyTip{color:var(--muted);text-align:center}
-
   /* Modal */
   .modal{display:none;position:fixed;inset:0;z-index:1000}
   .overlay{position:absolute;inset:0;background:rgba(0,0,0,.45)}
@@ -52,11 +46,9 @@
   .thumbs img.active{border-color:var(--brand)}
   .navBtns{display:flex;justify-content:space-between;margin-top:6px}
   .navBtns button{border:1px solid var(--border);background:#fff;border-radius:10px;padding:6px 10px;cursor:pointer}
-
   .btnrow{display:flex;gap:10px;margin-top:12px}
   .btn{border:none;border-radius:12px;padding:12px 16px;font-size:14px;cursor:pointer;box-shadow:var(--shadow)}
   .btn.copy{background:#f4efe7}.btn.ask{background:var(--brand);color:#fff}
-
   .modal-sm .panel{width:min(520px,92vw);grid-template-columns:1fr}
   .linkBox{display:flex;gap:12px;flex-direction:column}
   .linkBtn{display:flex;justify-content:space-between;align-items:center;text-decoration:none;padding:14px 16px;border-radius:14px;border:1px solid var(--border);background:#fff;color:var(--ink);box-shadow:var(--shadow)}
@@ -117,6 +109,7 @@
         <div style="margin:10px 0 4px"><span class="price" id="dPrice"></span></div>
         <div id="dMeta" class="muted"></div>
         <div id="dEta" class="muted" style="margin-top:6px"></div>
+        <div id="dDesc" style="margin-top:6px"></div>
         <div id="dNote" style="margin-top:6px"></div>
         <div id="dTags" style="margin:10px 0"></div>
         <div class="btnrow">
@@ -150,29 +143,19 @@
     const BUCKET='yuyu.f86';
     const supabaseClient=supabase.createClient(supabaseUrl,supabaseKey);
 
-    let productsData=[], runs=[], productRuns=[], OPTIONS={categories:[]};
+    let productsData=[], runs=[], productRuns=[], allowedAll=new Set(), OPTIONS={categories:[]};
 
     // Helpers
-    function publicUrlFromPath(path){
-      if(!path) return '';
-      const { data }=supabaseClient.storage.from(BUCKET).getPublicUrl(path);
-      return data?.publicUrl||'';
-    }
-    function toURL(s){
-      if(!s) return '';
-      if(/^https?:\/\//i.test(s)) return s;
-      return publicUrlFromPath(s);
-    }
+    function publicUrlFromPath(path){ if(!path) return ''; const { data }=supabaseClient.storage.from(BUCKET).getPublicUrl(path); return data?.publicUrl||''; }
+    function toURL(s){ if(!s) return ''; if(/^https?:\/\//i.test(s)) return s; return publicUrlFromPath(s); }
     function normalizeImages(p){
-      const arr=[];
-      if(p.img_url) arr.push(toURL(p.img_url));
+      const out=[];
+      if(p.img_url) out.push(toURL(p.img_url));
       let imgs=[];
       if(Array.isArray(p.images)) imgs=p.images;
-      else if(typeof p.images==='string' && p.images.trim()){
-        imgs=p.images.split(/[\n;]+/).map(s=>s.trim()).filter(Boolean);
-      }
-      imgs.forEach(x=>arr.push(toURL(x)));
-      return [...new Set(arr)].filter(Boolean);
+      else if(typeof p.images==='string' && p.images.trim()) imgs=p.images.split(/[\n;]+/).map(s=>s.trim()).filter(Boolean);
+      imgs.forEach(x=> out.push(toURL(x)));
+      return [...new Set(out)].filter(Boolean);
     }
     function fmt(n){ if(n==null) return ''; return 'NT$'+Number(n||0).toLocaleString('zh-TW'); }
     function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
@@ -180,8 +163,7 @@
 
     // Cards
     function cardHTML(p){
-      const imgs=normalizeImages(p);
-      const first=imgs[0] || '';
+      const imgs=normalizeImages(p); const first=imgs[0]||'';
       return `<div class="card" data-id="${p.id}">
         <div class="thumb">${first?`<img src="${first}" alt="${escapeHtml(p.name||'')}" loading="lazy">`:''}</div>
         <div class="pad">
@@ -197,7 +179,7 @@
       empty.style.display='none'; box.innerHTML=list.map(cardHTML).join('');
     }
 
-    // Runs（首頁展示）
+    // Home Featured Runs
     function renderHomeRuns(){
       const wrap=document.getElementById('homeRuns'); wrap.innerHTML='';
       runs.filter(r=>r.is_featured).forEach(r=>{
@@ -215,19 +197,21 @@
       });
     }
 
-    // Filters（預設僅顯示已連到「非 Pool」的商品）
+    // Filters
     function applyFilters(){
       const kw=(document.getElementById('searchInput').value||'').toLowerCase();
       const cat=document.getElementById('categoryFilter').value;
       const sort=document.getElementById('sortSelect').value;
       const runId=document.getElementById('runFilter').value;
 
-      // 允許清單：預設為所有「非 Pool」連線的商品；若選擇特定連線就縮小
-      let allowedIds=new Set(productRuns.map(x=>x.product_id));
-      if(runId){ allowedIds=new Set(productRuns.filter(x=>x.run_id===runId).map(x=>x.product_id)); }
+      let allowedRun=null;
+      if(runId){ allowedRun=new Set(productRuns.filter(x=>x.run_id===runId).map(x=>x.product_id)); }
 
       let list=productsData.filter(p=>{
-        if(!allowedIds.has(p.id)) return false; // 還在共用池（或未關聯）的不顯示
+        // 只顯示有關聯到啟用且非 Pool 的 run 的商品
+        if(!allowedAll.has(p.id)) return false;
+        if(allowedRun && !allowedRun.has(p.id)) return false;
+
         const text=`${p.name||''} ${(p.eta_text||'')} ${(Array.isArray(p.tags)?p.tags.join(','):(p.tags||''))}`.toLowerCase();
         const hitKw=!kw||text.includes(kw);
         const hitCat=!cat||p.category===cat;
@@ -241,39 +225,30 @@
       renderList(list);
     }
 
-    // Detail modal
+    // Modal
     const detailModal=document.getElementById('detailModal');
     detailModal.querySelector('.overlay').addEventListener('click',()=> detailModal.style.display='none');
-
     let curImgs=[], curIdx=0;
-    function setBig(i){
-      if(!curImgs.length) return;
-      curIdx=(i+curImgs.length)%curImgs.length;
-      document.getElementById('dImg').src=curImgs[curIdx];
-      document.querySelectorAll('#thumbs img').forEach((im,idx)=> im.classList.toggle('active', idx===curIdx));
-    }
+    function setBig(i){ if(!curImgs.length) return; curIdx=(i+curImgs.length)%curImgs.length; document.getElementById('dImg').src=curImgs[curIdx]; document.querySelectorAll('#thumbs img').forEach((im,idx)=> im.classList.toggle('active', idx===curIdx)); }
     function openDetail(id){
-      const p=productsData.find(x=>String(x.id)===String(id));
-      if(!p) return;
-
-      curImgs=normalizeImages(p); curIdx=0;
-
+      const p=productsData.find(x=>String(x.id)===String(id)); if(!p) return;
+      curImgs = normalizeImages(p); curIdx=0;
       document.getElementById('dImg').src=curImgs[0]||'';
       document.getElementById('dName').textContent=p.name||'';
       document.getElementById('dId').textContent=p.product_id?`商品編號：${p.product_id}`:'';
       document.getElementById('dPrice').textContent=fmt(p.price);
 
-      const meta=[
+      const etaText = (p.eta_text && !/共用池/i.test(p.eta_text)) ? p.eta_text : '';
+      const metaParts=[
         p.category?`分類：${p.category}`:'',
         p.status?`狀態：${p.status}`:'',
-        p.arrival_time?`開始寄送日期：${p.arrival_time}（預計三天內出貨）`:''
-      ].filter(Boolean).join('　');
-      document.getElementById('dMeta').textContent=meta;
-
-      // 不顯示任何「共用池」字眼；eta_text 保留為一般文字
-      document.getElementById('dEta').textContent=p.eta_text||'';
-      // 描述：若有 description 就優先用；否則用 note
-      document.getElementById('dNote').textContent=(p.description??p.note)||'';
+        p.arrival_time?`開始寄送：${p.arrival_time}（預計三天內出貨）`:''
+      ].filter(Boolean);
+      document.getElementById('dMeta').textContent=metaParts.join('　');
+      document.getElementById('dEta').textContent=etaText;
+      document.getElementById('dDesc').textContent=p.description||'';
+      document.getElementById('dDesc').style.display=p.description?'block':'none';
+      document.getElementById('dNote').textContent=p.note||'';
 
       const tagsBox=document.getElementById('dTags'); tagsBox.innerHTML='';
       (Array.isArray(p.tags)?p.tags:[]).forEach(t=>{
@@ -283,11 +258,7 @@
       });
 
       const th=document.getElementById('thumbs'); th.innerHTML='';
-      curImgs.forEach((u,idx)=>{
-        const im=document.createElement('img'); im.src=u; if(idx===0) im.classList.add('active');
-        im.onclick=()=> setBig(idx);
-        th.appendChild(im);
-      });
+      curImgs.forEach((u,idx)=>{ const im=document.createElement('img'); im.src=u; if(idx===0) im.classList.add('active'); im.onclick=()=> setBig(idx); th.appendChild(im); });
       document.getElementById('btnPrev').onclick=()=> setBig(curIdx-1);
       document.getElementById('btnNext').onclick=()=> setBig(curIdx+1);
 
@@ -306,26 +277,22 @@
     document.getElementById('linksClose').addEventListener('click',()=> linksModal.style.display='none');
     function openLinks(){ linksModal.style.display='block'; }
 
-    // Fetch
+    // Supabase fetch
     async function fetchRuns(){
-      // 只取啟用 & 非共用池（前台完全不需要 Pool）
-      const { data }=await supabaseClient
-        .from('runs')
+      // 只取啟用 & 非共用池
+      const { data }=await supabaseClient.from('runs')
         .select('id,code,title,region,start_date,end_date,note,ship_start_date,is_active,is_featured,is_pool')
-        .eq('is_active',true)
-        .eq('is_pool',false)
+        .eq('is_active',true).eq('is_pool',false)
         .order('start_date',{ascending:false});
       return data||[];
     }
     async function fetchProductRuns(runIds){
       let q=supabaseClient.from('product_runs').select('product_id,run_id');
       if(runIds?.length) q=q.in('run_id',runIds);
-      const { data }=await q;
-      return data||[];
+      const { data }=await q; return data||[];
     }
     async function fetchProducts(){
-      const { data }=await supabaseClient
-        .from('products')
+      const { data }=await supabaseClient.from('products')
         .select('id,product_id,name,price,category,status,arrival_time,eta_text,tags,images,img_url,created_at,note,description');
       return data||[];
     }
@@ -346,11 +313,7 @@
     function fillRuns(){
       const sel=document.getElementById('runFilter');
       sel.innerHTML='<option value="">全部連線</option>';
-      runs.forEach(r=>{
-        const opt=document.createElement('option');
-        opt.value=r.id; opt.textContent=r.title||r.code||r.region;
-        sel.appendChild(opt);
-      });
+      runs.forEach(r=>{ const opt=document.createElement('option'); opt.value=r.id; opt.textContent=r.title||r.code||r.region; sel.appendChild(opt); });
     }
     async function loadHomeNotice(){
       const { data }=await supabaseClient.from('site_meta').select('value').eq('key','home_notice').maybeSingle();
@@ -364,10 +327,8 @@
       await loadHomeNotice();
       productsData=await fetchProducts();
       productRuns=await fetchProductRuns(runs.map(r=>r.id));
-      fillCategories();
-      fillRuns();
-      renderHomeRuns();
-      applyFilters();
+      allowedAll=new Set(productRuns.map(x=>x.product_id));   // 只顯示有 run 的商品
+      fillCategories(); fillRuns(); renderHomeRuns(); applyFilters();
       document.getElementById('loading').style.display='none';
       document.getElementById('shopPage').style.display='block';
     }
