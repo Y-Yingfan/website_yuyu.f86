@@ -31,8 +31,7 @@
   .card{border:1px solid var(--border);border-radius:var(--radius);background:var(--card);overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:.08s}
   .card:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(139,94,52,.12)}
   .thumb{height:var(--thumb-h);background:#f2eee7;display:flex;align-items:center;justify-content:center}
-  /* 讓卡片縮圖不裁切，整張可見 */
-  .thumb img{width:100%;height:100%;object-fit:contain}
+  .thumb img{width:100%;height:100%;object-fit:contain} /* 不裁切，整張可見 */
   .pad{padding:12px 14px}
   .name{font-size:14px;line-height:1.35;margin:0 0 6px}
   .price{color:#b03c2f;font-weight:800}
@@ -47,7 +46,7 @@
   @media (max-width:820px){.panel{grid-template-columns:1fr}}
   .viewer{display:grid;gap:8px}
   .bigimg{width:100%;aspect-ratio:4/3;background:#f2eee7;border-radius:14px;overflow:hidden;display:flex;align-items:center;justify-content:center}
-  .bigimg img{width:100%;height:100%;object-fit:contain} /* 自動縮放不裁切 */
+  .bigimg img{width:100%;height:100%;object-fit:contain}
   .thumbs{display:grid;grid-auto-flow:column;gap:8px;overflow:auto}
   .thumbs img{height:64px;width:auto;border-radius:8px;border:2px solid transparent;cursor:pointer}
   .thumbs img.active{border-color:var(--brand)}
@@ -114,7 +113,7 @@
       </div>
       <div class="detail">
         <h2 id="dName" style="margin:0 0 6px"></h2>
-        <div class="muted" id="dId"></div><!-- 商品編號 -->
+        <div class="muted" id="dId"></div>
         <div style="margin:10px 0 4px"><span class="price" id="dPrice"></span></div>
         <div id="dMeta" class="muted"></div>
         <div id="dEta" class="muted" style="margin-top:6px"></div>
@@ -153,7 +152,7 @@
 
     let productsData=[], runs=[], productRuns=[], OPTIONS={categories:[]};
 
-    // ------- Helpers -------
+    // Helpers
     function publicUrlFromPath(path){
       if(!path) return '';
       const { data }=supabaseClient.storage.from(BUCKET).getPublicUrl(path);
@@ -161,10 +160,9 @@
     }
     function toURL(s){
       if(!s) return '';
-      if(/^https?:\/\//i.test(s)) return s;           // 已是完整網址
-      return publicUrlFromPath(s);                    // Storage 相對路徑
+      if(/^https?:\/\//i.test(s)) return s;
+      return publicUrlFromPath(s);
     }
-    // 將單一商品的所有圖片轉成可公開 URL 的陣列（img_url + images）
     function normalizeImages(p){
       const arr=[];
       if(p.img_url) arr.push(toURL(p.img_url));
@@ -174,17 +172,16 @@
         imgs=p.images.split(/[\n;]+/).map(s=>s.trim()).filter(Boolean);
       }
       imgs.forEach(x=>arr.push(toURL(x)));
-      // 去重、過濾空值
       return [...new Set(arr)].filter(Boolean);
     }
     function fmt(n){ if(n==null) return ''; return 'NT$'+Number(n||0).toLocaleString('zh-TW'); }
     function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
     function byNew(a,b){ if(a.created_at&&b.created_at) return new Date(b.created_at)-new Date(a.created_at); if(a.id&&b.id) return b.id-a.id; return 0; }
 
-    // ------- Cards -------
+    // Cards
     function cardHTML(p){
-      const imgs = normalizeImages(p);
-      const first = imgs[0] || '';
+      const imgs=normalizeImages(p);
+      const first=imgs[0] || '';
       return `<div class="card" data-id="${p.id}">
         <div class="thumb">${first?`<img src="${first}" alt="${escapeHtml(p.name||'')}" loading="lazy">`:''}</div>
         <div class="pad">
@@ -200,7 +197,7 @@
       empty.style.display='none'; box.innerHTML=list.map(cardHTML).join('');
     }
 
-    // ------- Home Featured Runs -------
+    // Runs（首頁展示）
     function renderHomeRuns(){
       const wrap=document.getElementById('homeRuns'); wrap.innerHTML='';
       runs.filter(r=>r.is_featured).forEach(r=>{
@@ -218,18 +215,19 @@
       });
     }
 
-    // ------- Filters -------
+    // Filters（預設僅顯示已連到「非 Pool」的商品）
     function applyFilters(){
       const kw=(document.getElementById('searchInput').value||'').toLowerCase();
       const cat=document.getElementById('categoryFilter').value;
       const sort=document.getElementById('sortSelect').value;
       const runId=document.getElementById('runFilter').value;
 
-      let allowed=null;
-      if(runId){ allowed=new Set(productRuns.filter(x=>x.run_id===runId).map(x=>x.product_id)); }
+      // 允許清單：預設為所有「非 Pool」連線的商品；若選擇特定連線就縮小
+      let allowedIds=new Set(productRuns.map(x=>x.product_id));
+      if(runId){ allowedIds=new Set(productRuns.filter(x=>x.run_id===runId).map(x=>x.product_id)); }
 
       let list=productsData.filter(p=>{
-        if(allowed && !allowed.has(p.id)) return false;
+        if(!allowedIds.has(p.id)) return false; // 還在共用池（或未關聯）的不顯示
         const text=`${p.name||''} ${(p.eta_text||'')} ${(Array.isArray(p.tags)?p.tags.join(','):(p.tags||''))}`.toLowerCase();
         const hitKw=!kw||text.includes(kw);
         const hitCat=!cat||p.category===cat;
@@ -243,7 +241,7 @@
       renderList(list);
     }
 
-    // ------- Modal (multi-images) -------
+    // Detail modal
     const detailModal=document.getElementById('detailModal');
     detailModal.querySelector('.overlay').addEventListener('click',()=> detailModal.style.display='none');
 
@@ -251,16 +249,14 @@
     function setBig(i){
       if(!curImgs.length) return;
       curIdx=(i+curImgs.length)%curImgs.length;
-      const url = curImgs[curIdx];
-      document.getElementById('dImg').src=url;
+      document.getElementById('dImg').src=curImgs[curIdx];
       document.querySelectorAll('#thumbs img').forEach((im,idx)=> im.classList.toggle('active', idx===curIdx));
     }
     function openDetail(id){
       const p=productsData.find(x=>String(x.id)===String(id));
       if(!p) return;
 
-      curImgs = normalizeImages(p);
-      curIdx=0;
+      curImgs=normalizeImages(p); curIdx=0;
 
       document.getElementById('dImg').src=curImgs[0]||'';
       document.getElementById('dName').textContent=p.name||'';
@@ -270,11 +266,14 @@
       const meta=[
         p.category?`分類：${p.category}`:'',
         p.status?`狀態：${p.status}`:'',
-        p.arrival_time?`到貨：${p.arrival_time}`:''
+        p.arrival_time?`開始寄送日期：${p.arrival_time}（預計三天內出貨）`:''
       ].filter(Boolean).join('　');
       document.getElementById('dMeta').textContent=meta;
+
+      // 不顯示任何「共用池」字眼；eta_text 保留為一般文字
       document.getElementById('dEta').textContent=p.eta_text||'';
-      document.getElementById('dNote').textContent=p.note||'';
+      // 描述：若有 description 就優先用；否則用 note
+      document.getElementById('dNote').textContent=(p.description??p.note)||'';
 
       const tagsBox=document.getElementById('dTags'); tagsBox.innerHTML='';
       (Array.isArray(p.tags)?p.tags:[]).forEach(t=>{
@@ -301,15 +300,15 @@
       if(el) openDetail(el.getAttribute('data-id'));
     });
 
-    // ------- Links Modal -------
+    // Links modal
     const linksModal=document.getElementById('linksModal');
     linksModal.querySelector('.overlay').addEventListener('click',()=> linksModal.style.display='none');
     document.getElementById('linksClose').addEventListener('click',()=> linksModal.style.display='none');
     function openLinks(){ linksModal.style.display='block'; }
 
-    // ------- Supabase fetch -------
+    // Fetch
     async function fetchRuns(){
-      // 只取啟用 & 非共用池
+      // 只取啟用 & 非共用池（前台完全不需要 Pool）
       const { data }=await supabaseClient
         .from('runs')
         .select('id,code,title,region,start_date,end_date,note,ship_start_date,is_active,is_featured,is_pool')
@@ -327,7 +326,7 @@
     async function fetchProducts(){
       const { data }=await supabaseClient
         .from('products')
-        .select('id,product_id,name,price,category,status,arrival_time,eta_text,tags,images,img_url,created_at,note');
+        .select('id,product_id,name,price,category,status,arrival_time,eta_text,tags,images,img_url,created_at,note,description');
       return data||[];
     }
     async function loadOptions(){
