@@ -31,7 +31,8 @@
   .card{border:1px solid var(--border);border-radius:var(--radius);background:var(--card);overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:.08s}
   .card:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(139,94,52,.12)}
   .thumb{height:var(--thumb-h);background:#f2eee7;display:flex;align-items:center;justify-content:center}
-  .thumb img{width:100%;height:100%;object-fit:cover}
+  /* 讓卡片縮圖不裁切，整張可見 */
+  .thumb img{width:100%;height:100%;object-fit:contain}
   .pad{padding:12px 14px}
   .name{font-size:14px;line-height:1.35;margin:0 0 6px}
   .price{color:#b03c2f;font-weight:800}
@@ -152,28 +153,38 @@
 
     let productsData=[], runs=[], productRuns=[], OPTIONS={categories:[]};
 
-    // 工具
+    // ------- Helpers -------
     function publicUrlFromPath(path){
       if(!path) return '';
       const { data }=supabaseClient.storage.from(BUCKET).getPublicUrl(path);
       return data?.publicUrl||'';
     }
+    function toURL(s){
+      if(!s) return '';
+      if(/^https?:\/\//i.test(s)) return s;           // 已是完整網址
+      return publicUrlFromPath(s);                    // Storage 相對路徑
+    }
+    // 將單一商品的所有圖片轉成可公開 URL 的陣列（img_url + images）
+    function normalizeImages(p){
+      const arr=[];
+      if(p.img_url) arr.push(toURL(p.img_url));
+      let imgs=[];
+      if(Array.isArray(p.images)) imgs=p.images;
+      else if(typeof p.images==='string' && p.images.trim()){
+        imgs=p.images.split(/[\n;]+/).map(s=>s.trim()).filter(Boolean);
+      }
+      imgs.forEach(x=>arr.push(toURL(x)));
+      // 去重、過濾空值
+      return [...new Set(arr)].filter(Boolean);
+    }
     function fmt(n){ if(n==null) return ''; return 'NT$'+Number(n||0).toLocaleString('zh-TW'); }
     function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
     function byNew(a,b){ if(a.created_at&&b.created_at) return new Date(b.created_at)-new Date(a.created_at); if(a.id&&b.id) return b.id-a.id; return 0; }
-    function ensureArrayImages(p){
-      // 支援：img_url 或 images(json/字串/分號/換行)
-      if(Array.isArray(p.images)) return p.images;
-      if(typeof p.images==='string' && p.images.trim()){
-        return p.images.split(/[\n;]+/).map(s=>s.trim()).filter(Boolean);
-      }
-      return [];
-    }
 
-    // 卡片與列表
+    // ------- Cards -------
     function cardHTML(p){
-      const imgs=ensureArrayImages(p);
-      const first = p.img_url || (imgs[0]? publicUrlFromPath(imgs[0]) : '');
+      const imgs = normalizeImages(p);
+      const first = imgs[0] || '';
       return `<div class="card" data-id="${p.id}">
         <div class="thumb">${first?`<img src="${first}" alt="${escapeHtml(p.name||'')}" loading="lazy">`:''}</div>
         <div class="pad">
@@ -189,7 +200,7 @@
       empty.style.display='none'; box.innerHTML=list.map(cardHTML).join('');
     }
 
-    // 首頁 featured 連線卡片（只顯示非池 is_pool=false）
+    // ------- Home Featured Runs -------
     function renderHomeRuns(){
       const wrap=document.getElementById('homeRuns'); wrap.innerHTML='';
       runs.filter(r=>r.is_featured).forEach(r=>{
@@ -207,7 +218,7 @@
       });
     }
 
-    // 篩選
+    // ------- Filters -------
     function applyFilters(){
       const kw=(document.getElementById('searchInput').value||'').toLowerCase();
       const cat=document.getElementById('categoryFilter').value;
@@ -232,7 +243,7 @@
       renderList(list);
     }
 
-    // Modal 開啟/填充（多圖）
+    // ------- Modal (multi-images) -------
     const detailModal=document.getElementById('detailModal');
     detailModal.querySelector('.overlay').addEventListener('click',()=> detailModal.style.display='none');
 
@@ -247,10 +258,8 @@
     function openDetail(id){
       const p=productsData.find(x=>String(x.id)===String(id));
       if(!p) return;
-      const imgs=ensureArrayImages(p).map(publicUrlFromPath);
-      const first = p.img_url || (imgs[0]||'');
-      curImgs = [first, ...imgs.filter(u=>u && u!==first)];
-      curImgs = curImgs.filter(Boolean);
+
+      curImgs = normalizeImages(p);
       curIdx=0;
 
       document.getElementById('dImg').src=curImgs[0]||'';
@@ -274,7 +283,6 @@
         s.textContent=t; tagsBox.appendChild(s);
       });
 
-      // thumbs
       const th=document.getElementById('thumbs'); th.innerHTML='';
       curImgs.forEach((u,idx)=>{
         const im=document.createElement('img'); im.src=u; if(idx===0) im.classList.add('active');
@@ -293,15 +301,15 @@
       if(el) openDetail(el.getAttribute('data-id'));
     });
 
-    // 連結 modal
+    // ------- Links Modal -------
     const linksModal=document.getElementById('linksModal');
     linksModal.querySelector('.overlay').addEventListener('click',()=> linksModal.style.display='none');
     document.getElementById('linksClose').addEventListener('click',()=> linksModal.style.display='none');
     function openLinks(){ linksModal.style.display='block'; }
 
-    // Supabase 資料讀取
+    // ------- Supabase fetch -------
     async function fetchRuns(){
-      // 只取啟用 & 非共用池，避免前台看到共用池
+      // 只取啟用 & 非共用池
       const { data }=await supabaseClient
         .from('runs')
         .select('id,code,title,region,start_date,end_date,note,ship_start_date,is_active,is_featured,is_pool')
@@ -338,7 +346,7 @@
     }
     function fillRuns(){
       const sel=document.getElementById('runFilter');
-      sel.innerHTML='<option value="">全部連線</option>'; // 不再放「最近連線」、不放共用池
+      sel.innerHTML='<option value="">全部連線</option>';
       runs.forEach(r=>{
         const opt=document.createElement('option');
         opt.value=r.id; opt.textContent=r.title||r.code||r.region;
@@ -353,7 +361,7 @@
 
     async function enterShop(){
       await loadOptions();
-      runs=await fetchRuns(); // ★ 非池 only
+      runs=await fetchRuns();
       await loadHomeNotice();
       productsData=await fetchProducts();
       productRuns=await fetchProductRuns(runs.map(r=>r.id));
@@ -365,13 +373,13 @@
       document.getElementById('shopPage').style.display='block';
     }
 
-    // 事件
+    // Events
     document.getElementById('searchInput').addEventListener('input',applyFilters);
     document.getElementById('categoryFilter').addEventListener('change',applyFilters);
     document.getElementById('sortSelect').addEventListener('change',applyFilters);
     document.getElementById('runFilter').addEventListener('change',applyFilters);
 
-    // 啟動
+    // Start
     enterShop();
   </script>
 </body>
