@@ -1,3 +1,4 @@
+<!-- 省略：和你現有一樣的 <head> 樣式，保持版面不動 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -26,17 +27,14 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
 .preview img{max-width:100%;max-height:100%;object-fit:contain}
 .preview button{position:absolute;top:4px;right:4px;border:none;background:#000a;color:#fff;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:12px}
 .badge{display:inline-block;border:1px solid var(--border);padding:3px 8px;border-radius:999px;font-size:12px;background:#fff}
-
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.card{border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px}
+.card .muted{font-size:12px}
 /* Modal */
 .modal{display:none;position:fixed;inset:0;z-index:1000}
 .overlay{position:absolute;inset:0;background:rgba(0,0,0,.45)}
 .sheet{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(980px,92vw);max-height:90vh;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:16px}
 .sheet h3{margin:0 0 8px}
-
-/* simple grid list in pool */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
-.card{border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px}
-.card .muted{font-size:12px}
 </style>
 </head>
 <body>
@@ -64,13 +62,11 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
           <input id="pStatus" list="statusList" placeholder="選或自行輸入"/>
           <datalist id="statusList"><option value="現貨"></option><option value="預購"></option><option value="售罄"></option></datalist>
         </div>
-        <div><label>開始寄送（arrival_time）</label><input id="pArrival" type="date"/></div>
+        <div><label>到貨日 arrival_time</label><input id="pArrival" type="date"/></div>
         <div><label>指派到連線（含共用池）</label><select id="pRunAssign"><option value="">— 選擇連線 —</option></select></div>
         <div><label>eta_text（若上面沒選可手填）</label><input id="pEta" placeholder="例：9/26 東京"/></div>
-
-        <div style="grid-column:1 / -1"><label>描述 description（前台顯示；非必填）</label><input id="pDesc" placeholder="給客人看的說明"/></div>
-        <div style="grid-column:1 / -1"><label>備註 / 補充（內部用，可空）</label><input id="pNote"/></div>
-
+        <div style="grid-column:1 / -1"><label>備註 / 補充 note</label><input id="pNote"/></div>
+        <div style="grid-column:1 / -1"><label>描述 description（非必填）</label><textarea id="pDesc" placeholder="想補充的說明或規格"></textarea></div>
         <div style="grid-column:1 / -1"><label>標籤 tags（逗號分隔）</label><input id="pTags" placeholder="3coins,and us,腮紅"/></div>
         <div><label>成本幣別</label><select id="pCostCurrency"><option value="TWD">TWD</option><option value="JPY">JPY</option><option value="KRW">KRW</option><option value="USD">USD</option></select></div>
         <div><label>成本（原幣）</label><input id="pCostForeign" type="number" step="0.01" min="0" placeholder="例如 350"/></div>
@@ -123,18 +119,9 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
         <div><label>結束 end_date</label><input id="rEnd" type="date"/></div>
         <div><label>寄送開始 ship_start_date</label><input id="rShip" type="date"/></div>
         <div><label>備註 note</label><input id="rNote"/></div>
-        <div>
-          <label>是否啟用 is_active</label>
-          <select id="rActive"><option>true</option><option>false</option></select>
-        </div>
-        <div>
-          <label>首頁 featured</label>
-          <select id="rFeatured"><option>false</option><option>true</option></select>
-        </div>
-        <div>
-          <label>是否 Pool（共用池）</label>
-          <select id="rIsPool"><option value="false">否</option><option value="true">是</option></select>
-        </div>
+        <div><label>是否啟用 is_active</label><select id="rActive"><option>true</option><option>false</option></select></div>
+        <div><label>首頁 featured</label><select id="rFeatured"><option>false</option><option>true</option></select></div>
+        <div><label>是否 Pool（共用池）</label><select id="rIsPool"><option value="false">否</option><option value="true">是</option></select></div>
       </div>
       <div style="display:flex;gap:10px">
         <button class="btn" id="btnRunCreate">新增連線</button>
@@ -158,16 +145,10 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
     <div class="panel">
       <h3 style="margin:0 0 10px">從共用池「複製」商品到某次連線</h3>
       <div class="row">
-        <div>
-          <label>選擇 Pool 連線（is_pool=true）</label>
-          <select id="poolSelect"><option value="">— 選擇 Pool —</option></select>
-        </div>
-        <div>
-          <label>目標連線（實際跑團）</label>
-          <select id="poolTarget"><option value="">— 選擇目標連線 —</option></select>
-        </div>
+        <div><label>選擇 Pool 連線（is_pool=true）</label><select id="poolSelect"><option value="">— 選擇 Pool —</option></select></div>
+        <div><label>目標連線（實際跑團）</label><select id="poolTarget"><option value="">— 選擇目標連線 —</option></select></div>
       </div>
-      <div class="small muted">說明：這裡是「複製」對應，會新增 <code>product_runs</code> 到目標連線；Pool 仍會保留，不會被移除。複製後會同步該商品到貨（<code>arrival_time</code>）＝目標連線「寄送開始（ship_start_date）」；<code>eta_text</code> ＝目標連線標題。</div>
+      <div class="small muted">說明：這裡是「複製」對應，會新增 <code>product_runs</code> 到目標連線；Pool 仍會保留，不會被移除。複製後同步：<code>arrival_time</code>＝目標連線 <code>ship_start_date</code>、<code>eta_text</code>＝目標連線標題。</div>
     </div>
 
     <div class="panel">
@@ -202,7 +183,7 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
     </div>
   </section>
 
-  <!-- SETTINGS：匯率 -->
+  <!-- SETTINGS -->
   <section id="tab-settings" style="display:none">
     <div class="panel">
       <h3 style="margin:0 0 10px">匯率設定</h3>
@@ -230,11 +211,11 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
       <div><label>分類</label><input id="eCategory" list="categoryList"/></div>
       <div><label>商品編號</label><input id="ePid"/></div>
       <div><label>狀態</label><input id="eStatus" list="statusList"/></div>
-      <div><label>開始寄送（arrival_time）</label><input id="eArrival" type="date"/></div>
+      <div><label>到貨日</label><input id="eArrival" type="date"/></div>
       <div><label>指派到連線</label><select id="eRunAssign"><option value="">— 選擇連線 —</option></select></div>
       <div><label>eta_text</label><input id="eEta"/></div>
-      <div style="grid-column:1 / -1"><label>描述 description</label><input id="eDesc"/></div>
-      <div style="grid-column:1 / -1"><label>備註（內部用，可空）</label><input id="eNote"/></div>
+      <div style="grid-column:1 / -1"><label>備註</label><input id="eNote"/></div>
+      <div style="grid-column:1 / -1"><label>描述</label><textarea id="eDesc"></textarea></div>
       <div style="grid-column:1 / -1"><label>標籤（逗號分隔）</label><input id="eTags"/></div>
       <div><label>成本幣別</label><select id="eCostCurrency"><option>TWD</option><option>JPY</option><option>KRW</option><option>USD</option></select></div>
       <div><label>成本（原幣）</label><input id="eCostForeign" type="number" step="0.01" min="0"/></div>
@@ -337,17 +318,21 @@ async function loadRuns(){
     prodFilterRun.appendChild(new Option(runLabel(r), r.id));
   });
 
-  // Runs 表
   await renderRunsTable();
 
-  // Pool / Bulk 下拉
+  // Pool tab 下拉
   poolSelect.innerHTML='<option value="">— 選擇 Pool —</option>';
   poolRuns.forEach(r=> poolSelect.appendChild(new Option(runLabel(r), r.id)));
   poolTarget.innerHTML='<option value="">— 選擇目標連線 —</option>';
   normalRuns.forEach(r=> poolTarget.appendChild(new Option(runLabel(r), r.id)));
+
+  // Bulk
   bulkFrom.innerHTML='<option value="">— 選擇來源 —</option>';
   bulkTo.innerHTML='<option value="">— 選擇目標 —</option>';
-  runsCache.forEach(r=>{ bulkFrom.appendChild(new Option(runLabel(r), r.id)); bulkTo.appendChild(new Option(runLabel(r), r.id)); });
+  runsCache.forEach(r=>{
+    bulkFrom.appendChild(new Option(runLabel(r), r.id));
+    bulkTo.appendChild(new Option(runLabel(r), r.id));
+  });
 }
 pRunAssign.addEventListener('change', e=>{ try{ const o=JSON.parse(e.target.value||''); if(o.title) pEta.value=o.title; }catch(_){ } });
 eRunAssign.addEventListener('change', e=>{ try{ const o=JSON.parse(e.target.value||''); if(o.title) eEta.value=o.title; }catch(_){ } });
@@ -378,7 +363,7 @@ window.editRun=async(id)=>{
   rStart.value=r.start_date||''; rEnd.value=r.end_date||''; rShip.value=r.ship_start_date||'';
   rNote.value=r.note||''; rActive.value=String(!!r.is_active); rFeatured.value=String(!!r.is_featured);
   rIsPool.value=String(!!r.is_pool);
-  document.getElementById('runForm').dataset.editId=id;   // 綁在容器避免被清掉
+  document.getElementById('runForm').dataset.editId=id;
   btnRunCreate.textContent='儲存變更';
 };
 window.deleteRun=async(id)=>{
@@ -403,7 +388,6 @@ btnRunCreate.onclick=async()=>{
   if(!payload.title){ alert('請輸入標題'); return; }
   const form=document.getElementById('runForm');
   const editId=form.dataset.editId||null;
-
   if(editId){
     const { error }=await sb.from('runs').update(payload).eq('id',editId);
     if(error){ alert('更新失敗：'+error.message); return; }
@@ -414,12 +398,7 @@ btnRunCreate.onclick=async()=>{
   }
   btnRunReset.click(); await loadRuns(); alert('已儲存');
 };
-btnRunReset.onclick=()=>{
-  [rTitle,rCode,rRegion,rStart,rEnd,rShip,rNote].forEach(i=>i.value='');
-  rActive.value='true'; rFeatured.value='false'; rIsPool.value='false';
-  delete document.getElementById('runForm').dataset.editId;
-  btnRunCreate.textContent='新增連線';
-};
+btnRunReset.onclick=()=>{ [rTitle,rCode,rRegion,rStart,rEnd,rShip,rNote].forEach(i=>i.value=''); rActive.value='true'; rFeatured.value='false'; rIsPool.value='false'; delete document.getElementById('runForm').dataset.editId; btnRunCreate.textContent='新增連線'; };
 
 // Category datalist
 async function fillCategoryDatalist(){
@@ -466,7 +445,7 @@ async function uploadAll(state, baseFolder){
   return out;
 }
 
-// Create Product（含描述欄位、無資料表也會 fallback）
+// Create Product
 btnCreateProduct.onclick=async()=>{
   let pid=(pPid.value||'').trim(); if(!pid) pid=await genNextPid();
   let runObj=null; try{ runObj=JSON.parse(pRunAssign.value||''); }catch(_){}
@@ -476,33 +455,22 @@ btnCreateProduct.onclick=async()=>{
   const uploaded=await uploadAll(addFilesState, `uploads/${ym}`);
   const img_url=uploaded[0]||null, imagesText=uploaded.slice(1).join('\n');
 
-  const desc=(pDesc.value||'').trim();
-
-  const payloadBase={
+  const payload={
     name:(pName.value||'').trim(), price:pPrice.value?Number(pPrice.value):null,
     category:(pCategory.value||'').trim()||null, product_id:pid, status:(pStatus.value||'').trim()||null,
-    arrival_time:(pArrival.value||'')||null, eta_text:eta,
-    note:(pNote.value||'').trim()||null,
+    arrival_time:(pArrival.value||'')||null, eta_text:eta, note:(pNote.value||'').trim()||null,
+    description:(pDesc.value||'').trim()||null,
     img_url, images:imagesText,
     cost_jpy:(pCostCurrency.value==='JPY'? Number(pCostForeign.value||0): null),
     cost_nt: pCostNt.value? Number(pCostNt.value): null,
     tags: parseTags(pTags.value)
   };
-
-  // 先嘗試寫入 description 欄位；若資料庫無此欄位，再改寫 note
-  let payload={...payloadBase, description: (desc||null)};
   if(!payload.name){ alert('請輸入商品名稱'); return; }
-  let ins = await sb.from('products').insert(payload).select();
-  if(ins.error && /column .*description/i.test(ins.error.message||'')){
-    payload={...payloadBase, note: desc || payloadBase.note}; // fallback：把描述寫進 note
-    ins = await sb.from('products').insert(payload).select();
-  }
-  if(ins.error){ alert('新增失敗：'+ins.error.message); return; }
-
-  const product=ins.data?.[0];
+  const { data, error }=await sb.from('products').insert(payload).select(); if(error){ alert('新增失敗：'+error.message); return; }
+  const product=data?.[0];
   if(runObj?.id && product?.id){ await sb.from('product_runs').upsert({product_id:product.id, run_id:runObj.id},{onConflict:'product_id,run_id'}); }
   addFilesState.length=0; renderPreviews(imgPreviews, addFilesState);
-  ['pName','pPrice','pCategory','pPid','pStatus','pArrival','pEta','pDesc','pNote','pTags','pCostForeign','pCostNt'].forEach(id=>document.getElementById(id).value='');
+  ['pName','pPrice','pCategory','pPid','pStatus','pArrival','pEta','pNote','pDesc','pTags','pCostForeign','pCostNt'].forEach(id=>document.getElementById(id).value='');
   alert('新增成功'); await fillCategoryDatalist(); await loadProducts();
 };
 
@@ -523,7 +491,7 @@ async function loadProducts(runFilterId=null){
       <td>${p.product_id||''}</td><td>${p.eta_text||''}</td>
       <td>${costNT!=null?Math.round(costNT):'—'}</td><td>${nt(p.price,costNT)}</td>
       <td style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn ghost" data-id="${p.id}" onclick="openEdit('${p.id}')">編輯</button>
+        <button class="btn ghost" onclick="openEdit('${p.id}')">編輯</button>
         <button class="btn ghost" onclick="copyPublicImages('${(p.img_url||'')}', \`${(p.images||'').replace(/`/g,'\\`')}\`)">複製圖片連結</button>
         <button class="btn ghost" onclick="deleteProduct('${p.id}')">刪除</button>
       </td>`;
@@ -542,7 +510,7 @@ window.deleteProduct=async(id)=>{
   await loadProducts(prodFilterRun.value||null); alert('已刪除');
 };
 
-// Edit modal（含描述）
+// Edit modal
 const editModal=document.getElementById('editModal'); editModal.querySelector('.overlay').onclick=()=> editModal.style.display='none';
 document.getElementById('btnEditCancel').onclick=()=> editModal.style.display='none';
 let editing=null, keepOld=true, oldMain=null, oldImages=[];
@@ -554,12 +522,9 @@ async function openEdit(id){
   const runId=pr?.[0]?.run_id||null;
 
   eName.value=data.name||''; ePrice.value=data.price??''; eCategory.value=data.category||''; ePid.value=data.product_id||'';
-  eStatus.value=data.status||''; eArrival.value=data.arrival_time||''; eEta.value=data.eta_text||'';
-  eDesc.value=(data.description??'');       // 若沒有此欄位，等下更新時會 fallback
-  eNote.value=data.note||'';
-  eTags.value=(Array.isArray(data.tags)? data.tags.join(','): (data.tags||'')); eCostNt.value=data.cost_nt??'';
-  if(data.cost_jpy!=null){ eCostCurrency.value='JPY'; eCostForeign.value=data.cost_jpy; }
-  else { eCostCurrency.value='TWD'; eCostForeign.value=''; }
+  eStatus.value=data.status||''; eArrival.value=data.arrival_time||''; eEta.value=data.eta_text||''; eNote.value=data.note||'';
+  eDesc.value=data.description||''; eTags.value=(Array.isArray(data.tags)? data.tags.join(','): (data.tags||'')); eCostNt.value=data.cost_nt??'';
+  if(data.cost_jpy!=null){ eCostCurrency.value='JPY'; eCostForeign.value=data.cost_jpy; } else { eCostCurrency.value='TWD'; eCostForeign.value=''; }
 
   eRunAssign.value='';
   if(runId){ const v=JSON.stringify({id:runId,title:(runsCache.find(r=>r.id===runId)?.title||'')}); Array.from(eRunAssign.options).forEach(o=>{ if(o.value===v) eRunAssign.value=v; }); }
@@ -585,25 +550,16 @@ btnEditSave.onclick=async()=>{
   let runObj=null; try{ runObj=JSON.parse(eRunAssign.value||''); }catch(_){}
   const eta=(eEta.value||'').trim() || (runObj?.title||null);
 
-  const base={
+  const payload={
     name:eName.value||null, price:ePrice.value?Number(ePrice.value):null,
     category:eCategory.value||null, product_id:ePid.value||null, status:eStatus.value||null,
-    arrival_time:eArrival.value||null, eta_text:eta,
-    note:eNote.value||null,
+    arrival_time:eArrival.value||null, eta_text:eta, note:eNote.value||null, description:eDesc.value||null,
     img_url:main||null, images:imgs.join('\n'), cost_nt:eCostNt.value?Number(eCostNt.value):null,
     cost_jpy:(eCostCurrency.value==='JPY'? (eCostForeign.value?Number(eCostForeign.value):null) : null),
     tags: parseTags(eTags.value)
   };
-
-  // 嘗試更新 description；若沒有此欄位則改把描述寫進 note（不覆蓋原 note，會合併）
-  let update={...base, description: (eDesc.value||null)};
-  let upd = await sb.from('products').update(update).eq('id',editing.id);
-  if(upd.error && /column .*description/i.test(upd.error.message||'')){
-    const mergedNote=[base.note, (eDesc.value||'')].filter(Boolean).join('｜');
-    update={...base, note: mergedNote};
-    upd = await sb.from('products').update(update).eq('id',editing.id);
-  }
-  if(upd.error){ alert('儲存失敗：'+upd.error.message); return; }
+  const { error }=await sb.from('products').update(payload).eq('id',editing.id);
+  if(error){ alert('儲存失敗：'+error.message); return; }
 
   await sb.from('product_runs').delete().match({product_id:editing.id});
   if(runObj?.id){ await sb.from('product_runs').upsert({product_id:editing.id, run_id:runObj.id},{onConflict:'product_id,run_id'}); }
@@ -611,13 +567,10 @@ btnEditSave.onclick=async()=>{
   alert('已更新'); editModal.style.display='none'; await fillCategoryDatalist(); await loadProducts(prodFilterRun.value||null);
 };
 
-// Pool 派送（複製 + 同步日期與 eta）
+// Pool 派送
 let poolCheckedAll=false;
 poolSelect.addEventListener('change', loadPoolProducts);
-poolSelectAll.onclick=()=>{
-  poolCheckedAll=!poolCheckedAll;
-  document.querySelectorAll('.poolItemChk').forEach(c=> c.checked=poolCheckedAll);
-};
+poolSelectAll.onclick=()=>{ poolCheckedAll=!poolCheckedAll; document.querySelectorAll('.poolItemChk').forEach(c=> c.checked=poolCheckedAll); };
 async function loadPoolProducts(){
   const poolId=poolSelect.value||null;
   const box=document.getElementById('poolList'); box.innerHTML='';
@@ -663,36 +616,31 @@ poolCopy.onclick=async()=>{
     if(targetRun.ship_start_date) patch.arrival_time = targetRun.ship_start_date;
     await sb.from('products').update(patch).in('id', ids);
   }
-
   alert(`已複製 ${ids.length} 件到目標連線，並同步到貨／eta_text`);
 };
 
-// Bulk（同概念）
+// Bulk
 let bulkPreviewCount=0;
 bulkPreview.onclick=async()=>{
   const from=bulkFrom.value||''; const to=bulkTo.value||''; if(!from||!to){ alert('請選來源與目標'); return; }
   const { data:pr }=await sb.from('product_runs').select('product_id').eq('run_id',from);
-  bulkPreviewCount=(pr||[]).length;
-  bulkInfo.textContent=`預計複製 ${bulkPreviewCount} 件。`;
+  bulkPreviewCount=(pr||[]).length; bulkInfo.textContent=`預計複製 ${bulkPreviewCount} 件。`;
 };
 bulkDo.onclick=async()=>{
-  const from=bulkFrom.value||''; const to=bulkTo.value||''; if(!from||!to){ alert('請先選來源與目標'); return; }
+  const from=bulkFrom.value||''; const to=bulkTo.value||''; if(!from||!to){ alert('請選來源與目標'); return; }
   const { data:pr }=await sb.from('product_runs').select('product_id').eq('run_id',from);
   const ids=(pr||[]).map(x=>x.product_id);
   const rows=ids.map(pid=>({product_id:pid, run_id:to}));
   const { error }=await sb.from('product_runs').upsert(rows,{onConflict:'product_id,run_id'});
   if(error){ alert('執行失敗：'+error.message); return; }
 
-  // 同步到貨與 eta_text
   const { data:targetRun }=await sb.from('runs').select('title,ship_start_date').eq('id',to).maybeSingle();
   if(targetRun){
     const patch={ eta_text: targetRun.title || null };
     if(targetRun.ship_start_date) patch.arrival_time = targetRun.ship_start_date;
     await sb.from('products').update(patch).in('id', ids);
   }
-
-  alert(`已複製 ${ids.length} 件到目標連線，並同步到貨／eta_text`);
-  bulkInfo.textContent='';
+  alert(`已複製 ${ids.length} 件到目標連線，並同步到貨／eta_text`); bulkInfo.textContent='';
 };
 
 // init
