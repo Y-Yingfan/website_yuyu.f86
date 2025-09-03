@@ -23,6 +23,8 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
 .badge{display:inline-block;border:1px solid var(--border);padding:3px 8px;border-radius:999px;font-size:12px;background:#fff}
 .actions{display:flex;gap:6px}
 .inline{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:#fff}
+.hr{height:1px;background:var(--border);margin:10px 0}
+.small{font-size:12px}
 </style>
 </head>
 <body>
@@ -32,6 +34,7 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
   <div class="tabs">
     <button class="tabbtn active" data-tab="runs">Runs</button>
     <button class="tabbtn" data-tab="products">Products</button>
+    <button class="tabbtn" data-tab="bulk">Bulk Move</button>
   </div>
 
   <!-- Runs -->
@@ -59,7 +62,7 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
       </div>
       <div class="toolbar" style="margin-top:10px">
         <button class="btn" id="btnCreateRun">新增連線</button>
-        <span class="muted">自動忽略你表裡沒有的欄位（例如沒有 <code>ship_start_date</code> 也能送出）。</span>
+        <span class="muted small">送出時自動忽略你表裡不存在的欄位。</span>
       </div>
     </div>
 
@@ -89,7 +92,10 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
         <div><label>名稱 name</label><input id="pName" placeholder="商品名稱"/></div>
         <div><label>售價 price（NT$）</label><input id="pPrice" type="number" step="1" min="0"/></div>
         <div><label>分類 category</label><input id="pCategory" placeholder="3 coins"/></div>
-        <div><label>商品編號 product_id</label><input id="pPid" placeholder="自訂編號，可空白"/></div>
+        <div>
+          <label>商品編號 product_id（留空自動產生）</label>
+          <input id="pPid" placeholder="留空 → 自動產生 PYYYYMMDD-XXX"/>
+        </div>
         <div><label>狀態 status</label><input id="pStatus" placeholder="現貨/預購/缺貨…"/></div>
         <div><label>到貨日 arrival_time</label><input id="pArrival" placeholder="例：9/10 依序出貨"/></div>
         <div>
@@ -103,16 +109,57 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
       </div>
       <div class="toolbar" style="margin-top:10px">
         <button class="btn" id="btnCreateProduct">新增商品</button>
-        <span class="muted">送出後會自動建立 <code>product_runs</code> 對應。</span>
+        <span class="muted small">送出後會自動建立 <code>product_runs</code> 對應。</span>
       </div>
     </div>
 
     <div class="panel">
-      <h3 style="margin:0 0 10px">已新增（最新 50）</h3>
+      <h3 style="margin:0 0 10px">已新增（最新 50，可編輯）</h3>
       <table class="list" id="productsTable">
-        <thead><tr><th>名稱</th><th>售價</th><th>分類</th><th>編號</th><th>連線(eta_text)</th></tr></thead>
+        <thead><tr>
+          <th>名稱</th><th style="width:90px">售價</th><th style="width:130px">分類</th>
+          <th style="width:150px">編號</th><th style="width:220px">連線 / eta_text</th><th style="width:170px">操作</th>
+        </tr></thead>
         <tbody></tbody>
       </table>
+    </div>
+  </section>
+
+  <!-- Bulk Move -->
+  <section id="tab-bulk" style="display:none">
+    <div class="panel">
+      <h3 style="margin:0 0 10px">批次移動／複製商品到另一個連線</h3>
+      <div class="row">
+        <div>
+          <label>來源連線</label>
+          <select id="bmSrc"><option value="">— 選擇連線 —</option></select>
+        </div>
+        <div>
+          <label>目標連線</label>
+          <select id="bmDst"><option value="">— 選擇連線 —</option></select>
+        </div>
+        <div>
+          <label>模式</label>
+          <select id="bmMode">
+            <option value="reassign">移動（改指派到目標連線）</option>
+            <option value="clone">複製（建立新商品並指派）</option>
+          </select>
+        </div>
+        <div>
+          <label>範圍</label>
+          <select id="bmScope">
+            <option value="linked">只含已有關聯的商品（product_runs）</option>
+            <option value="includeEta">若無關聯則用 eta_text 補齊</option>
+          </select>
+        </div>
+      </div>
+      <div class="toolbar" style="margin-top:10px">
+        <button class="btn" id="btnBulkPreview">預覽數量</button>
+        <button class="btn" id="btnBulkRun">執行</button>
+        <span id="bmInfo" class="muted small"></span>
+      </div>
+      <div class="hr"></div>
+      <p class="muted small">「複製」會為每個新商品自動產生新的 <code>product_id</code>（PYYYYMMDD-XXX），其餘欄位沿用來源。</p>
     </div>
   </section>
 </div>
@@ -137,7 +184,7 @@ document.querySelectorAll('.tabbtn').forEach(btn=>{
 const safeGet=(o,k,def='')=>o&&o[k]!=null?o[k]:def;
 const parseTags=(s)=>{const raw=(s||'').trim();return raw?raw.split(',').map(x=>x.trim()).filter(Boolean):null};
 
-// tolerant insert/update that drops unknown columns
+// tolerant insert/update that drops unknown columns / type errors
 async function tolerantWrite(table, payload, mode='insert', match=undefined){
   let p={}; Object.entries(payload).forEach(([k,v])=>{ if(v!=='' && v!==undefined) p[k]=v; });
   for(let i=0;i<10;i++){
@@ -156,23 +203,31 @@ async function tolerantWrite(table, payload, mode='insert', match=undefined){
   return {error:{message:'重試超過次數'}};
 }
 
-// RUNS =====
+// === RUNS ===
+let runsCache=[];
+
 async function loadRuns(){
   const { data, error } = await sb.from('runs').select('*').order('created_at',{ascending:false}).order('id',{ascending:false});
   if(error){ alert('讀取 runs 失敗：'+error.message); return; }
+  runsCache = data||[];
 
-  // 填商品的連線下拉
-  const assign=document.getElementById('pRunAssign'); assign.innerHTML='<option value="">— 選擇連線 —</option>';
-  (data||[]).forEach(r=>{
-    const o=document.createElement('option');
-    o.value=JSON.stringify({id:r.id,title:r.title||'',note:r.note||''});
-    o.textContent=r.title || r.code || r.region || ('Run#'+r.id);
-    assign.appendChild(o);
+  // 商品指派 / BulkMove 下拉
+  const assign=document.getElementById('pRunAssign');
+  const bmSrc=document.getElementById('bmSrc');
+  const bmDst=document.getElementById('bmDst');
+  [assign,bmSrc,bmDst].forEach(sel=>{ sel.innerHTML='<option value="">— 選擇連線 —</option>'; });
+  runsCache.forEach(r=>{
+    const text=r.title || r.code || r.region || ('Run#'+r.id);
+    [assign,bmSrc,bmDst].forEach(sel=>{
+      const o=document.createElement('option');
+      o.value=JSON.stringify({id:r.id,title:r.title||'',note:r.note||''});
+      o.textContent=text; sel.appendChild(o);
+    });
   });
 
   // 列表
   const tb=document.querySelector('#runsTable tbody'); tb.innerHTML='';
-  (data||[]).forEach(r=>{
+  runsCache.forEach(r=>{
     const tr=document.createElement('tr');
     tr.dataset.id=r.id;
     tr.innerHTML = `
@@ -197,7 +252,6 @@ async function loadRuns(){
   });
 }
 
-// 新增 run
 document.getElementById('btnCreateRun').onclick=async()=>{
   const payload={
     title:(runTitle.value||'').trim(),
@@ -217,7 +271,6 @@ document.getElementById('btnCreateRun').onclick=async()=>{
   await loadRuns();
 };
 
-// 事件委派：儲存/取消/刪除
 document.querySelector('#runsTable').addEventListener('click', async (e)=>{
   const tr = e.target.closest('tr'); if(!tr) return;
   const id = tr.dataset.id;
@@ -247,53 +300,216 @@ document.querySelector('#runsTable').addEventListener('click', async (e)=>{
   }
 });
 
-// PRODUCTS =====
-document.getElementById('pRunAssign').addEventListener('change', e=>{
-  const v=e.target.value; if(!v) return;
-  try{ const obj=JSON.parse(v); if(obj.title) document.getElementById('pEta').value=obj.title; if(obj.note){ const cur=pNote.value||''; pNote.value=cur? (cur+'；'+obj.note):obj.note; } }catch(_){}
-});
+// === PRODUCTS ===
+
+// 自動產生商品編號：PYYYYMMDD-XXX
+async function genNextPid(){
+  const d=new Date();
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  const prefix=`P${y}${m}${day}-`;
+  // 抓同日前綴的最大尾碼
+  const { data, error } = await sb.from('products').select('product_id').ilike('product_id', `${prefix}%`).order('product_id',{ascending:false}).limit(1);
+  let seq=1;
+  if(!error && data && data[0] && data[0].product_id){
+    const last=data[0].product_id;
+    const n = parseInt(String(last).split('-').pop().replace(/\D/g,''),10);
+    if(!isNaN(n)) seq = n+1;
+  }
+  return prefix + String(seq).padStart(3,'0');
+}
 
 async function loadProducts(){
   const { data, error } = await sb.from('products').select('id,name,price,category,product_id,eta_text').order('created_at',{ascending:false}).limit(50);
   if(error){ console.error(error); return; }
   const tb=document.querySelector('#productsTable tbody'); tb.innerHTML='';
   (data||[]).forEach(p=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${p.name||''}</td><td>${p.price??''}</td><td>${p.category||''}</td><td>${p.product_id||''}</td><td>${p.eta_text||''}</td>`;
+    const tr=document.createElement('tr'); tr.dataset.id=p.id;
+    const runSel = buildRunSelect(p.eta_text);
+    tr.innerHTML=`
+      <td><input class="inline ep-name" value="${p.name||''}"/></td>
+      <td><input class="inline ep-price" type="number" value="${p.price??''}"/></td>
+      <td><input class="inline ep-cat" value="${p.category||''}"/></td>
+      <td><input class="inline ep-pid" value="${p.product_id||''}" placeholder="留空自動產生"/></td>
+      <td>${runSel}<div style="margin-top:6px"><input class="inline ep-eta" value="${p.eta_text||''}" placeholder="eta_text（若不選連線）"/></div></td>
+      <td class="actions">
+        <button class="btn ghost ep-save">儲存</button>
+        <button class="btn ghost ep-reload">取消</button>
+        <button class="btn ep-del">刪除</button>
+      </td>`;
     tb.appendChild(tr);
   });
 }
+function buildRunSelect(currentEta){
+  const sel = document.createElement('select');
+  sel.className='inline ep-run';
+  const opt0=document.createElement('option'); opt0.value=''; opt0.textContent='— 指派連線 —'; sel.appendChild(opt0);
+  runsCache.forEach(r=>{
+    const o=document.createElement('option');
+    o.value=JSON.stringify({id:r.id,title:r.title||''});
+    o.textContent=r.title||r.code||r.region||('Run#'+r.id);
+    if(r.title===currentEta) o.selected=true;
+    sel.appendChild(o);
+  });
+  return sel.outerHTML;
+}
+
+document.getElementById('pRunAssign').addEventListener('change', e=>{
+  const v=e.target.value; if(!v) return;
+  try{ const obj=JSON.parse(v); if(obj.title) document.getElementById('pEta').value=obj.title; if(obj.note){ const cur=pNote.value||''; pNote.value=cur? (cur+'；'+obj.note):obj.note; } }catch(_){}
+});
 
 document.getElementById('btnCreateProduct').onclick=async()=>{
-  // 先組 payload
+  // 先編號
+  let pid=(pPid.value||'').trim();
+  if(!pid){ pid=await genNextPid(); }
+
+  // run 指派
   let runObj=null; try{ runObj = JSON.parse(pRunAssign.value||''); }catch(_){}
+  const eta = (pEta.value||'').trim() || (runObj?.title||null);
+
   const payload={
     name:(pName.value||'').trim(),
     price: pPrice.value? Number(pPrice.value): null,
     category:(pCategory.value||'').trim()||null,
-    product_id:(pPid.value||'').trim()||null,
+    product_id: pid,
     status:(pStatus.value||'').trim()||null,
     arrival_time:(pArrival.value||'').trim()||null,
-    eta_text:(pEta.value||'').trim()||(runObj?.title||null),
+    eta_text: eta,
     note:(pNote.value||'').trim()||null,
     img_url:(pImgUrl.value||'').trim()||null,
     tags: parseTags(pTags.value)
   };
   if(!payload.name){ alert('請輸入商品名稱'); return; }
 
-  // 建立商品（容錯）
   const ins = await tolerantWrite('products', payload, 'insert');
   if(ins.error){ alert('新增商品失敗：'+ins.error.message); return; }
   const product = ins.data?.[0];
 
-  // 若有選 run → 建立關聯
   if(runObj?.id && product?.id){
+    await sb.from('product_runs').delete().match({product_id: product.id}); // 確保單一指派
     const { error } = await sb.from('product_runs').insert({ product_id: product.id, run_id: runObj.id });
     if(error){ console.warn('建立 product_runs 失敗（不影響商品建立）：', error.message); }
   }
 
   alert('新增商品成功');
   ['pName','pPrice','pCategory','pPid','pStatus','pArrival','pEta','pNote','pImgUrl','pTags'].forEach(id=>document.getElementById(id).value='');
+  await loadProducts();
+};
+
+// 產品列操作
+document.querySelector('#productsTable').addEventListener('click', async (e)=>{
+  const tr=e.target.closest('tr'); if(!tr) return; const id=tr.dataset.id;
+  if(e.target.classList.contains('ep-reload')){ loadProducts(); return; }
+  if(e.target.classList.contains('ep-del')){
+    if(!confirm('確定刪除這個商品？')) return;
+    const { error } = await sb.from('products').delete().match({id});
+    if(!error){ alert('已刪除'); loadProducts(); } else { alert('刪除失敗：'+error.message); }
+    return;
+  }
+  if(e.target.classList.contains('ep-save')){
+    // 若編號留空 → 自動產生
+    let pid = tr.querySelector('.ep-pid').value.trim();
+    if(!pid) pid = await genNextPid();
+
+    // run 選單
+    let runObj=null; try{ runObj=JSON.parse(tr.querySelector('.ep-run').value||''); }catch(_){}
+    const eta = tr.querySelector('.ep-eta').value.trim() || (runObj?.title||null);
+
+    const payload={
+      name: tr.querySelector('.ep-name').value.trim(),
+      price: tr.querySelector('.ep-price').value ? Number(tr.querySelector('.ep-price').value) : null,
+      category: tr.querySelector('.ep-cat').value.trim()||null,
+      product_id: pid,
+      eta_text: eta
+    };
+    if(!payload.name){ alert('名稱不可空白'); return; }
+    const res = await tolerantWrite('products', payload, 'update', {id});
+    if(res.error){ alert('儲存失敗：'+res.error.message); return; }
+
+    // 維護 product_runs 對應
+    if(runObj?.id){
+      await sb.from('product_runs').delete().match({product_id:id});
+      await sb.from('product_runs').insert({product_id:id, run_id: runObj.id});
+    }
+
+    alert('已儲存'); loadProducts(); return;
+  }
+});
+
+// === BULK MOVE ===
+async function getProductsByRun(runId, includeEta=false){
+  // 先取 product_runs
+  const { data: pr } = await sb.from('product_runs').select('product_id').match({run_id:runId});
+  let ids=new Set((pr||[]).map(x=>x.product_id));
+  // 如果要補 eta_text
+  let etaTitle=null; if(includeEta){
+    const run = runsCache.find(r=>r.id===runId);
+    etaTitle = run?.title||null;
+    if(etaTitle){
+      const { data: etaProds } = await sb.from('products').select('id').eq('eta_text', etaTitle);
+      (etaProds||[]).forEach(p=>ids.add(p.id));
+    }
+  }
+  if(ids.size===0) return [];
+  const { data: products } = await sb.from('products').select('*').in('id', Array.from(ids));
+  return products||[];
+}
+
+async function cloneProductToRun(p, dstRun){
+  const newPid = await genNextPid();
+  const payload = {
+    name:p.name, price:p.price, category:p.category,
+    product_id:newPid, status:p.status, arrival_time:p.arrival_time,
+    eta_text: dstRun.title||null, note:p.note, img_url:p.img_url,
+    tags:p.tags
+  };
+  const ins = await tolerantWrite('products', payload, 'insert');
+  if(ins.error) return {error:ins.error};
+  const np = ins.data?.[0];
+  if(np?.id){
+    await sb.from('product_runs').insert({product_id:np.id, run_id:dstRun.id});
+  }
+  return {ok:true};
+}
+
+document.getElementById('btnBulkPreview').onclick=async()=>{
+  const src = JSON.parse(document.getElementById('bmSrc').value||'null');
+  const scope = document.getElementById('bmScope').value;
+  if(!src){ alert('請選來源連線'); return; }
+  const list = await getProductsByRun(src.id, scope==='includeEta');
+  document.getElementById('bmInfo').textContent = `將處理 ${list.length} 筆商品。`;
+};
+
+document.getElementById('btnBulkRun').onclick=async()=>{
+  const src = JSON.parse(document.getElementById('bmSrc').value||'null');
+  const dst = JSON.parse(document.getElementById('bmDst').value||'null');
+  const mode = document.getElementById('bmMode').value;
+  const scope = document.getElementById('bmScope').value;
+  if(!src || !dst){ alert('請選來源與目標連線'); return; }
+  if(src.id===dst.id){ alert('來源與目標不可相同'); return; }
+
+  const list = await getProductsByRun(src.id, scope==='includeEta');
+  if(list.length===0){ alert('沒有可處理的商品'); return; }
+
+  if(mode==='reassign'){
+    // 改指派到目標 run & 同步 eta_text
+    const eta = dst.title||null;
+    for(const p of list){
+      await tolerantWrite('products', {eta_text:eta}, 'update', {id:p.id});
+      await sb.from('product_runs').delete().match({product_id:p.id});
+      await sb.from('product_runs').insert({product_id:p.id, run_id:dst.id});
+    }
+    alert(`已移動 ${list.length} 筆商品到「${eta}」`);
+  }else{
+    // 複製
+    let ok=0;
+    for(const p of list){
+      const r=await cloneProductToRun(p, dst);
+      if(r.ok) ok++;
+    }
+    alert(`已複製 ${ok}/${list.length} 筆商品到「${dst.title||''}」`);
+  }
+  document.getElementById('bmInfo').textContent='';
   await loadProducts();
 };
 
