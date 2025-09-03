@@ -5,349 +5,303 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>後台｜連線與商品管理</title>
 <style>
-  :root{--bg:#f7f3ef;--paper:#fffdf9;--card:#fff;--ink:#2b2b2b;--muted:#7a7267;--brand:#8B5E34;--border:#eadfcd;--shadow:0 10px 24px rgba(139,94,52,.08);--radius:14px;--maxw:1080px}
-  *{box-sizing:border-box}
-  body{margin:0;background:linear-gradient(180deg,#f8f5f1 0%, var(--bg) 100%);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",Arial}
-  .wrap{max-width:var(--maxw);margin:20px auto;padding:0 16px}
-  h1{margin:6px 0 14px}
-  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-  .tabbtn{border:1px solid var(--border);background:#fffdf9;border-radius:999px;padding:8px 14px;cursor:pointer}
-  .tabbtn.active{background:var(--brand);color:#fff;border-color:transparent}
-  .panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:14px}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  @media (max-width:860px){.row{grid-template-columns:1fr}}
-  label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
-  input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fffdfa}
-  textarea{min-height:72px}
-  .btn{border:none;background:var(--brand);color:#fff;border-radius:12px;padding:12px 16px;cursor:pointer}
-  .list{width:100%;border-collapse:collapse}
-  .list th,.list td{border-top:1px solid var(--border);padding:8px}
-  .list th{background:#fffaf2;text-align:left;font-weight:700}
-  .muted{color:var(--muted)}
-  .help{font-size:12px;color:var(--muted);margin-top:4px}
-  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  .badge{display:inline-block;border:1px solid var(--border);padding:3px 8px;border-radius:999px;font-size:12px;background:#fff}
+:root{--bg:#f7f3ef;--paper:#fffdf9;--card:#fff;--ink:#2b2b2b;--muted:#7a7267;--brand:#8B5E34;--border:#eadfcd;--shadow:0 10px 24px rgba(139,94,52,.08);--radius:14px;--maxw:1080px}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#f8f5f1 0%,var(--bg) 100%);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",Arial}
+.wrap{max-width:var(--maxw);margin:20px auto;padding:0 16px}
+h1{margin:6px 0 14px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tabbtn{border:1px solid var(--border);background:#fffdf9;border-radius:999px;padding:8px 14px;cursor:pointer}
+.tabbtn.active{background:var(--brand);color:#fff;border-color:transparent}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:14px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media (max-width:860px){.row{grid-template-columns:1fr}}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fffdfa}
+textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;border-radius:12px;padding:10px 14px;cursor:pointer}
+.btn.ghost{background:#fff;border:1px solid var(--border);color:var(--ink)}
+.list{width:100%;border-collapse:collapse}.list th,.list td{border-top:1px solid var(--border);padding:8px;vertical-align:top}
+.list th{background:#fffaf2;text-align:left;font-weight:700}
+.muted{color:var(--muted)}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.badge{display:inline-block;border:1px solid var(--border);padding:3px 8px;border-radius:999px;font-size:12px;background:#fff}
+.actions{display:flex;gap:6px}
+.inline{width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:#fff}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>後台｜連線與商品管理 <span class="badge">Supabase</span></h1>
+<div class="wrap">
+  <h1>後台｜連線與商品管理 <span class="badge">Supabase</span></h1>
 
-    <div class="tabs">
-      <button class="tabbtn active" data-tab="runs">Runs</button>
-      <button class="tabbtn" data-tab="products">Products</button>
-      <button class="tabbtn" data-tab="bulk">Bulk Move</button>
-      <button class="tabbtn" data-tab="settings">Settings</button>
-    </div>
-
-    <!-- Runs -->
-    <section id="tab-runs">
-      <div class="panel">
-        <h3 style="margin:0 0 10px">新增連線（精簡＆自動對欄位）</h3>
-        <div class="row">
-          <div>
-            <label>地區 region（選填）</label>
-            <select id="runRegion">
-              <option value="">—</option>
-              <option value="Japan">日本 JP</option>
-              <option value="Korea">韓國 KR</option>
-              <option value="Taiwan">台灣 TW</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div>
-            <label>連線名稱 title（也會帶入商品的 eta_text）</label>
-            <input id="runTitle" placeholder="例：9/6-9 日本連線"/>
-          </div>
-          <div>
-            <label>開始日 start_date（選填）</label>
-            <input id="runStart" type="date"/>
-          </div>
-          <div>
-            <label>結束日 end_date（選填）</label>
-            <input id="runEnd" type="date"/>
-          </div>
-          <div>
-            <label>寄送開始日 ship_start_date（選填）</label>
-            <input id="runShipStart" type="date"/>
-            <div class="help">如果只想寫「9/10 依序出貨」，可以直接寫在備註。</div>
-          </div>
-          <div>
-            <label>代碼 code（選填）</label>
-            <input id="runCode" placeholder="自訂代碼（可空白）"/>
-          </div>
-          <div style="grid-column:1 / -1">
-            <label>備註 note（選填；會帶入商品的 note）</label>
-            <input id="runNote" placeholder="例：9/10 依序出貨"/>
-          </div>
-          <div>
-            <label>是否啟用 is_active</label>
-            <select id="runActive"><option value="true">true</option><option value="false">false</option></select>
-          </div>
-          <div>
-            <label>是否首頁 featured</label>
-            <select id="runFeatured"><option value="true">true</option><option value="false" selected>false</option></select>
-          </div>
-        </div>
-        <div style="margin-top:10px" class="toolbar">
-          <button class="btn" id="btnCreateRun">新增連線</button>
-          <span class="muted">自動忽略你表裡沒有的欄位（例如沒有 <code>ship_start_date</code> 也能送出）。</span>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h3 style="margin:0 0 10px">所有連線</h3>
-        <table class="list" id="runsTable">
-          <thead><tr><th>標題/代碼</th><th>區域</th><th>日期</th><th>寄送</th><th>備註</th><th>狀態</th><th>首頁</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Products -->
-    <section id="tab-products" style="display:none">
-      <div class="panel">
-        <h3 style="margin:0 0 10px">新增商品（與 CSV 對齊）</h3>
-        <div class="row">
-          <div>
-            <label>名稱 name</label>
-            <input id="pName" placeholder="商品名稱"/>
-          </div>
-          <div>
-            <label>售價 price（NT$）</label>
-            <input id="pPrice" type="number" step="1" min="0" placeholder="185"/>
-          </div>
-          <div>
-            <label>分類 category</label>
-            <input id="pCategory" placeholder="例：3 coins"/>
-          </div>
-          <div>
-            <label>商品編號 product_id（顯示在前台）</label>
-            <input id="pPid" placeholder="自訂編號，可空白"/>
-          </div>
-          <div>
-            <label>狀態 status（可空）</label>
-            <input id="pStatus" placeholder="現貨/預購/缺貨…"/>
-          </div>
-          <div>
-            <label>到貨日 arrival_time（可空）</label>
-            <input id="pArrival" placeholder="例：9/10 依序出貨"/>
-          </div>
-          <div>
-            <label>帶入到貨：選擇連線（title → eta_text；note → note）</label>
-            <select id="pRunFill">
-              <option value="">— 選擇連線 —</option>
-            </select>
-          </div>
-          <div>
-            <label>eta_text（連線名稱；出現在前台的下拉）</label>
-            <input id="pEta" placeholder="例：9/6-9 日本連線"/>
-          </div>
-          <div style="grid-column:1 / -1">
-            <label>備註 / 補充文字 note</label>
-            <input id="pNote" placeholder="補充給客人看的話"/>
-          </div>
-          <div>
-            <label>標籤 tags（半形逗號分隔；會轉陣列存 jsonb）</label>
-            <input id="pTags" placeholder="3coins,and us,腮紅"/>
-          </div>
-          <div>
-            <label>代表圖 img_url（Storage 路徑或完整 http）</label>
-            <input id="pImgUrl" placeholder="Japan/3 coins/xxx.jpg 或 https://..."/>
-            <div class="help">多圖請改用 CSV 匯入。</div>
-          </div>
-        </div>
-        <div style="margin-top:10px" class="toolbar">
-          <button class="btn" id="btnCreateProduct">新增商品</button>
-          <span class="muted">自動忽略你表裡沒有的欄位（例如沒有 <code>img_url</code> 也能送出）。</span>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h3 style="margin:0 0 10px">已新增</h3>
-        <table class="list" id="productsTable">
-          <thead><tr><th>名稱</th><th>售價</th><th>分類</th><th>編號</th><th>連線(eta_text)</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section id="tab-bulk" style="display:none">
-      <div class="panel"><h3 style="margin:0">Bulk Move</h3><p class="muted">之後需要再加。</p></div>
-    </section>
-    <section id="tab-settings" style="display:none">
-      <div class="panel"><h3 style="margin:0">Settings</h3><p class="muted">之後需要再加。</p></div>
-    </section>
+  <div class="tabs">
+    <button class="tabbtn active" data-tab="runs">Runs</button>
+    <button class="tabbtn" data-tab="products">Products</button>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const supabaseUrl='https://llbpmqyjigovxixeohzr.supabase.co';
-    const supabaseKey='sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';
-    const sb=supabase.createClient(supabaseUrl,supabaseKey);
+  <!-- Runs -->
+  <section id="tab-runs">
+    <div class="panel">
+      <h3 style="margin:0 0 10px">新增連線（精簡 & 自動對欄位）</h3>
+      <div class="row">
+        <div>
+          <label>地區 region（選填）</label>
+          <select id="runRegion">
+            <option value="">—</option><option>Japan</option><option>Korea</option><option>Taiwan</option><option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label>連線名稱 title（也會帶入商品 eta_text）</label>
+          <input id="runTitle" placeholder="例：9/6-9 日本連線"/>
+        </div>
+        <div><label>開始日 start_date（選填）</label><input id="runStart" type="date"/></div>
+        <div><label>結束日 end_date（選填）</label><input id="runEnd" type="date"/></div>
+        <div><label>寄送開始日 ship_start_date（選填）</label><input id="runShipStart" type="date"/></div>
+        <div><label>代碼 code（選填）</label><input id="runCode" placeholder="自訂代碼（可空白）"/></div>
+        <div style="grid-column:1 / -1"><label>備註 note（選填）</label><input id="runNote" placeholder="例：9/10 依序出貨"/></div>
+        <div><label>是否啟用 is_active</label><select id="runActive"><option value="true">true</option><option value="false">false</option></select></div>
+        <div><label>是否首頁 is_featured</label><select id="runFeatured"><option value="true">true</option><option value="false" selected>false</option></select></div>
+      </div>
+      <div class="toolbar" style="margin-top:10px">
+        <button class="btn" id="btnCreateRun">新增連線</button>
+        <span class="muted">自動忽略你表裡沒有的欄位（例如沒有 <code>ship_start_date</code> 也能送出）。</span>
+      </div>
+    </div>
 
-    // --- Tabs ---
-    document.querySelectorAll('.tabbtn').forEach(btn=>{
-      btn.onclick=()=>{
-        document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
-        const tab=btn.dataset.tab;
-        document.querySelectorAll('section[id^="tab-"]').forEach(s=>s.style.display='none');
-        document.getElementById('tab-'+tab).style.display='block';
-      };
-    });
+    <div class="panel">
+      <h3 style="margin:0 0 10px">所有連線（可編輯 / 刪除）</h3>
+      <table class="list" id="runsTable">
+        <thead><tr>
+          <th style="width:26%">標題 / 代碼</th>
+          <th style="width:9%">區域</th>
+          <th style="width:18%">日期</th>
+          <th style="width:12%">寄送</th>
+          <th>備註</th>
+          <th style="width:6%">狀態</th>
+          <th style="width:5%">首頁</th>
+          <th style="width:16%">操作</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
 
-    // --- Utils ---
-    function safeGet(o,k,def=''){ try{ return o&&o[k]!=null? o[k]: def; }catch(_){ return def; } }
-    function parseTags(s){ const raw=(s||'').trim(); if(!raw) return null; return raw.split(',').map(x=>x.trim()).filter(Boolean); }
+  <!-- Products -->
+  <section id="tab-products" style="display:none">
+    <div class="panel">
+      <h3 style="margin:0 0 10px">新增商品（與 CSV 對齊，並可指派到連線）</h3>
+      <div class="row">
+        <div><label>名稱 name</label><input id="pName" placeholder="商品名稱"/></div>
+        <div><label>售價 price（NT$）</label><input id="pPrice" type="number" step="1" min="0"/></div>
+        <div><label>分類 category</label><input id="pCategory" placeholder="3 coins"/></div>
+        <div><label>商品編號 product_id</label><input id="pPid" placeholder="自訂編號，可空白"/></div>
+        <div><label>狀態 status</label><input id="pStatus" placeholder="現貨/預購/缺貨…"/></div>
+        <div><label>到貨日 arrival_time</label><input id="pArrival" placeholder="例：9/10 依序出貨"/></div>
+        <div>
+          <label>指派到連線（會同步 eta_text）</label>
+          <select id="pRunAssign"><option value="">— 選擇連線 —</option></select>
+        </div>
+        <div><label>eta_text（若上面沒選，手動填）</label><input id="pEta" placeholder="例：9/6-9 日本連線"/></div>
+        <div style="grid-column:1 / -1"><label>備註 / 補充 note</label><input id="pNote"/></div>
+        <div><label>標籤 tags（逗號分隔）</label><input id="pTags" placeholder="3coins,and us,腮紅"/></div>
+        <div><label>代表圖 img_url</label><input id="pImgUrl" placeholder="Japan/3 coins/xxx.jpg 或 https://..."/></div>
+      </div>
+      <div class="toolbar" style="margin-top:10px">
+        <button class="btn" id="btnCreateProduct">新增商品</button>
+        <span class="muted">送出後會自動建立 <code>product_runs</code> 對應。</span>
+      </div>
+    </div>
 
-    // === Runs ===
-    async function loadRuns(){
-      // 重要：select('*')，避免指名不存在欄位造成錯誤
-      const { data, error } = await sb.from('runs').select('*').order('id',{ascending:false});
-      if(error){ console.error('loadRuns',error); alert('讀取 runs 失敗：'+error.message); return; }
+    <div class="panel">
+      <h3 style="margin:0 0 10px">已新增（最新 50）</h3>
+      <table class="list" id="productsTable">
+        <thead><tr><th>名稱</th><th>售價</th><th>分類</th><th>編號</th><th>連線(eta_text)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</div>
 
-      // 表格
-      const tb=document.querySelector('#runsTable tbody'); tb.innerHTML='';
-      (data||[]).forEach(r=>{
-        const start=safeGet(r,'start_date','');
-        const end=safeGet(r,'end_date','');
-        const ship=safeGet(r,'ship_start_date',''); // 若欄位不存在就顯示空字串
-        const tr=document.createElement('tr');
-        tr.innerHTML = `
-          <td><strong>${safeGet(r,'title','')}</strong><div class="muted">${safeGet(r,'code','')}</div></td>
-          <td>${safeGet(r,'region','')}</td>
-          <td>${start}${end?(' ~ '+end):''}</td>
-          <td>${ship}</td>
-          <td>${safeGet(r,'note','')}</td>
-          <td>${safeGet(r,'is_active',true)?'啟用':'停用'}</td>
-          <td>${safeGet(r,'is_featured',false)?'✔︎':''}</td>`;
-        tb.appendChild(tr);
-      });
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const supabaseUrl='https://llbpmqyjigovxixeohzr.supabase.co';
+const supabaseKey='sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';
+const sb=supabase.createClient(supabaseUrl,supabaseKey);
 
-      // 商品表單帶入用
-      const sel=document.getElementById('pRunFill'); sel.innerHTML='<option value="">— 選擇連線 —</option>';
-      (data||[]).forEach(r=>{
-        const o=document.createElement('option');
-        o.value=JSON.stringify({id:safeGet(r,'id',null),title:safeGet(r,'title',''),note:safeGet(r,'note','')});
-        o.textContent= safeGet(r,'title','') || safeGet(r,'code','') || safeGet(r,'region','') || ('Run#'+safeGet(r,'id',''));
-        sel.appendChild(o);
-      });
-    }
+// Tabs
+document.querySelectorAll('.tabbtn').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('section[id^="tab-"]').forEach(s=>s.style.display='none');
+    document.getElementById('tab-'+btn.dataset.tab).style.display='block';
+  };
+});
 
-    // 嘗試插入 runs；若回報「column XXX does not exist」就自動移除欄位重試
-    async function tolerantInsertRun(payload){
-      // 只送有值的欄位
-      let p={}; Object.entries(payload).forEach(([k,v])=>{ if(v!=='' && v!==null && v!==undefined) p[k]=v; });
-      for(let i=0;i<10;i++){
-        const { error } = await sb.from('runs').insert(p);
-        if(!error) return { ok:true };
-        const msg=(error.message||'').toLowerCase();
-        const m = msg.match(/column\s+([a-z0-9_]+)\s+.*does not exist/);
-        if(m && p[m[1]]!==undefined){
-          // 移除不存在欄位後重試
-          delete p[m[1]];
-          continue;
-        }
-        return { ok:false, error };
-      }
-      return { ok:false, error:{message:'重試超過次數'} };
-    }
+// helpers
+const safeGet=(o,k,def='')=>o&&o[k]!=null?o[k]:def;
+const parseTags=(s)=>{const raw=(s||'').trim();return raw?raw.split(',').map(x=>x.trim()).filter(Boolean):null};
 
-    async function createRun(){
-      const payload={
-        title: (runTitle.value||'').trim(),
-        region: (runRegion.value||'').trim() || null,
-        start_date: runStart.value || null,
-        end_date: runEnd.value || null,
-        ship_start_date: runShipStart.value || null,
-        code: (runCode.value||'').trim() || null,
-        note: (runNote.value||'').trim() || null,
-        is_active: runActive.value==='true',
-        is_featured: runFeatured.value==='true'
-      };
-      if(!payload.title){ alert('請輸入連線名稱（title）'); return; }
-      const res = await tolerantInsertRun(payload);
-      if(!res.ok){ console.error('createRun',res.error); alert('新增失敗：'+res.error.message); return; }
-      alert('新增成功');
-      ['runTitle','runRegion','runStart','runEnd','runShipStart','runCode','runNote'].forEach(id=>document.getElementById(id).value='');
-      loadRuns();
-    }
-    document.getElementById('btnCreateRun').onclick=createRun;
+// tolerant insert/update that drops unknown columns
+async function tolerantWrite(table, payload, mode='insert', match=undefined){
+  let p={}; Object.entries(payload).forEach(([k,v])=>{ if(v!=='' && v!==undefined) p[k]=v; });
+  for(let i=0;i<10;i++){
+    let q = sb.from(table);
+    if(mode==='insert') q=q.insert(p).select();
+    else if(mode==='update'){ q=q.update(p); if(match) q=q.match(match); q=q.select(); }
+    else if(mode==='delete'){ return sb.from(table).delete().match(match); }
+    const { data, error } = await q;
+    if(!error) return {data};
+    const msg=(error.message||'').toLowerCase();
+    const m = msg.match(/column\s+([a-z0-9_]+)\s+.*does not exist/);
+    if(m && p[m[1]]!==undefined){ delete p[m[1]]; continue; }
+    if(msg.includes('tags')){ delete p['tags']; continue; }
+    return {error};
+  }
+  return {error:{message:'重試超過次數'}};
+}
 
-    // === Products ===
-    async function loadProducts(){
-      const { data, error } = await sb.from('products').select('id,name,price,category,product_id,eta_text').order('id',{ascending:false}).limit(50);
-      if(error){ console.error('loadProducts',error); return; }
-      const tb=document.querySelector('#productsTable tbody'); tb.innerHTML='';
-      (data||[]).forEach(p=>{
-        const tr=document.createElement('tr');
-        tr.innerHTML=`<td>${p.name||''}</td><td>${p.price??''}</td><td>${p.category||''}</td><td>${p.product_id||''}</td><td>${p.eta_text||''}</td>`;
-        tb.appendChild(tr);
-      });
-    }
+// RUNS =====
+async function loadRuns(){
+  const { data, error } = await sb.from('runs').select('*').order('created_at',{ascending:false}).order('id',{ascending:false});
+  if(error){ alert('讀取 runs 失敗：'+error.message); return; }
 
-    // 從 run 帶入 eta_text / note
-    document.getElementById('pRunFill').addEventListener('change', e=>{
-      const v=e.target.value;
-      if(!v) return;
-      try{
-        const obj=JSON.parse(v);
-        if(obj.title) document.getElementById('pEta').value = obj.title;
-        if(obj.note){
-          const cur=document.getElementById('pNote').value||'';
-          document.getElementById('pNote').value = cur ? (cur+'；'+obj.note) : obj.note;
-        }
-      }catch(_){}
-    });
+  // 填商品的連線下拉
+  const assign=document.getElementById('pRunAssign'); assign.innerHTML='<option value="">— 選擇連線 —</option>';
+  (data||[]).forEach(r=>{
+    const o=document.createElement('option');
+    o.value=JSON.stringify({id:r.id,title:r.title||'',note:r.note||''});
+    o.textContent=r.title || r.code || r.region || ('Run#'+r.id);
+    assign.appendChild(o);
+  });
 
-    // 插入商品的容錯（移除無此欄位/型別不合再重試）
-    async function tolerantInsertProduct(payload){
-      let p={}; Object.entries(payload).forEach(([k,v])=>{ if(v!=='' && v!==null && v!==undefined) p[k]=v; });
-      for(let i=0;i<10;i++){
-        const { error } = await sb.from('products').insert(p);
-        if(!error) return { ok:true };
-        const msg=(error.message||'').toLowerCase();
+  // 列表
+  const tb=document.querySelector('#runsTable tbody'); tb.innerHTML='';
+  (data||[]).forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.dataset.id=r.id;
+    tr.innerHTML = `
+      <td><div><input class="inline f-title" value="${safeGet(r,'title','')}" /></div>
+          <div class="muted"><input class="inline f-code" value="${safeGet(r,'code','')}"/></div></td>
+      <td><input class="inline f-region" value="${safeGet(r,'region','')}"/></td>
+      <td>
+        <input class="inline f-start" type="date" value="${safeGet(r,'start_date','')||''}"/>
+        <div class="muted" style="margin-top:4px">～</div>
+        <input class="inline f-end" type="date" value="${safeGet(r,'end_date','')||''}"/>
+      </td>
+      <td><input class="inline f-ship" type="date" value="${safeGet(r,'ship_start_date','')||''}"/></td>
+      <td><input class="inline f-note" value="${safeGet(r,'note','')}"/></td>
+      <td><select class="inline f-active"><option value="true" ${safeGet(r,'is_active',true)?'selected':''}>啟用</option><option value="false" ${!safeGet(r,'is_active',true)?'selected':''}>停用</option></select></td>
+      <td><select class="inline f-featured"><option value="true" ${safeGet(r,'is_featured',false)?'selected':''}>✔︎</option><option value="false" ${!safeGet(r,'is_featured',false)?'selected':''}>—</option></select></td>
+      <td class="actions">
+        <button class="btn ghost btnSave">儲存</button>
+        <button class="btn ghost btnReload">取消</button>
+        <button class="btn btnDelete">刪除</button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+}
 
-        // 欄位不存在
-        const m1 = msg.match(/column\s+([a-z0-9_]+)\s+.*does not exist/);
-        if(m1 && p[m1[1]]!==undefined){ delete p[m1[1]]; continue; }
+// 新增 run
+document.getElementById('btnCreateRun').onclick=async()=>{
+  const payload={
+    title:(runTitle.value||'').trim(),
+    region:(runRegion.value||'').trim()||null,
+    start_date: runStart.value || null,
+    end_date: runEnd.value || null,
+    ship_start_date: runShipStart.value || null,
+    code:(runCode.value||'').trim()||null,
+    note:(runNote.value||'').trim()||null,
+    is_active: runActive.value==='true',
+    is_featured: runFeatured.value==='true'
+  };
+  if(!payload.title){ alert('請輸入連線名稱（title）'); return; }
+  const res = await tolerantWrite('runs', payload, 'insert');
+  if(res.error){ alert('新增失敗：'+res.error.message); return; }
+  alert('新增成功'); ['runTitle','runRegion','runStart','runEnd','runShipStart','runCode','runNote'].forEach(id=>document.getElementById(id).value='');
+  await loadRuns();
+};
 
-        // 型別不合（常見：tags 不是 jsonb / text[]）
-        if(msg.includes('tags')){ delete p['tags']; continue; }
+// 事件委派：儲存/取消/刪除
+document.querySelector('#runsTable').addEventListener('click', async (e)=>{
+  const tr = e.target.closest('tr'); if(!tr) return;
+  const id = tr.dataset.id;
+  if(e.target.classList.contains('btnReload')){ loadRuns(); return; }
+  if(e.target.classList.contains('btnSave')){
+    const payload={
+      title: tr.querySelector('.f-title').value.trim(),
+      code: tr.querySelector('.f-code').value.trim()||null,
+      region: tr.querySelector('.f-region').value.trim()||null,
+      start_date: tr.querySelector('.f-start').value||null,
+      end_date: tr.querySelector('.f-end').value||null,
+      ship_start_date: tr.querySelector('.f-ship').value||null,
+      note: tr.querySelector('.f-note').value.trim()||null,
+      is_active: tr.querySelector('.f-active').value==='true',
+      is_featured: tr.querySelector('.f-featured').value==='true'
+    };
+    if(!payload.title){ alert('標題不可空白'); return; }
+    const res = await tolerantWrite('runs', payload, 'update', {id});
+    if(res.error){ alert('儲存失敗：'+res.error.message); return; }
+    alert('已儲存'); loadRuns(); return;
+  }
+  if(e.target.classList.contains('btnDelete')){
+    if(!confirm('確定要刪除這個連線？（不可復原）')) return;
+    const { error } = await sb.from('runs').delete().match({id});
+    if(error){ alert('刪除失敗：'+error.message); return; }
+    alert('已刪除'); loadRuns(); return;
+  }
+});
 
-        return { ok:false, error };
-      }
-      return { ok:false, error:{message:'重試超過次數'} };
-    }
+// PRODUCTS =====
+document.getElementById('pRunAssign').addEventListener('change', e=>{
+  const v=e.target.value; if(!v) return;
+  try{ const obj=JSON.parse(v); if(obj.title) document.getElementById('pEta').value=obj.title; if(obj.note){ const cur=pNote.value||''; pNote.value=cur? (cur+'；'+obj.note):obj.note; } }catch(_){}
+});
 
-    async function createProduct(){
-      const p={
-        name:(pName.value||'').trim(),
-        price: pPrice.value? Number(pPrice.value): null,
-        category:(pCategory.value||'').trim() || null,
-        product_id:(pPid.value||'').trim() || null,
-        status:(pStatus.value||'').trim() || null,
-        arrival_time:(pArrival.value||'').trim() || null,
-        eta_text:(pEta.value||'').trim() || null,
-        note:(pNote.value||'').trim() || null,
-        img_url:(pImgUrl.value||'').trim() || null,
-        tags: parseTags(pTags.value)
-      };
-      if(!p.name){ alert('請輸入商品名稱'); return; }
-      const res = await tolerantInsertProduct(p);
-      if(!res.ok){ console.error('createProduct',res.error); alert('新增失敗：'+res.error.message); return; }
-      alert('新增商品成功');
-      ['pName','pPrice','pCategory','pPid','pStatus','pArrival','pEta','pNote','pImgUrl','pTags'].forEach(id=>document.getElementById(id).value='');
-      loadProducts();
-    }
-    document.getElementById('btnCreateProduct').onclick=createProduct;
+async function loadProducts(){
+  const { data, error } = await sb.from('products').select('id,name,price,category,product_id,eta_text').order('created_at',{ascending:false}).limit(50);
+  if(error){ console.error(error); return; }
+  const tb=document.querySelector('#productsTable tbody'); tb.innerHTML='';
+  (data||[]).forEach(p=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${p.name||''}</td><td>${p.price??''}</td><td>${p.category||''}</td><td>${p.product_id||''}</td><td>${p.eta_text||''}</td>`;
+    tb.appendChild(tr);
+  });
+}
 
-    // --- init ---
-    (async function init(){
-      await loadRuns();
-      await loadProducts();
-    })();
-  </script>
+document.getElementById('btnCreateProduct').onclick=async()=>{
+  // 先組 payload
+  let runObj=null; try{ runObj = JSON.parse(pRunAssign.value||''); }catch(_){}
+  const payload={
+    name:(pName.value||'').trim(),
+    price: pPrice.value? Number(pPrice.value): null,
+    category:(pCategory.value||'').trim()||null,
+    product_id:(pPid.value||'').trim()||null,
+    status:(pStatus.value||'').trim()||null,
+    arrival_time:(pArrival.value||'').trim()||null,
+    eta_text:(pEta.value||'').trim()||(runObj?.title||null),
+    note:(pNote.value||'').trim()||null,
+    img_url:(pImgUrl.value||'').trim()||null,
+    tags: parseTags(pTags.value)
+  };
+  if(!payload.name){ alert('請輸入商品名稱'); return; }
+
+  // 建立商品（容錯）
+  const ins = await tolerantWrite('products', payload, 'insert');
+  if(ins.error){ alert('新增商品失敗：'+ins.error.message); return; }
+  const product = ins.data?.[0];
+
+  // 若有選 run → 建立關聯
+  if(runObj?.id && product?.id){
+    const { error } = await sb.from('product_runs').insert({ product_id: product.id, run_id: runObj.id });
+    if(error){ console.warn('建立 product_runs 失敗（不影響商品建立）：', error.message); }
+  }
+
+  alert('新增商品成功');
+  ['pName','pPrice','pCategory','pPid','pStatus','pArrival','pEta','pNote','pImgUrl','pTags'].forEach(id=>document.getElementById(id).value='');
+  await loadProducts();
+};
+
+// init
+(async function init(){
+  await loadRuns();
+  await loadProducts();
+})();
+</script>
 </body>
 </html>
