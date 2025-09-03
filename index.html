@@ -27,7 +27,6 @@
   .card{border:1px solid var(--border);border-radius:var(--radius);background:var(--card);overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:.08s}
   .card:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(139,94,52,.12)}
   .thumb{height:var(--thumb-h);background:#f2eee7;display:flex;align-items:center;justify-content:center}
-  /* ✅ 卡片預覽改為 contain，完整顯示圖片 */
   .thumb img{width:100%;height:100%;object-fit:contain}
   .pad{padding:12px 14px}
   .name{font-size:14px;line-height:1.35;margin:0 0 6px}
@@ -42,7 +41,6 @@
   .panel{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(980px,92vw);max-height:88vh;overflow:auto;background:var(--paper);border:1px solid var(--border);border-radius:22px;box-shadow:var(--shadow);display:grid;grid-template-columns:1fr 1fr;gap:22px;padding:20px}
   @media (max-width:820px){.panel{grid-template-columns:1fr}}
 
-  /* Modal 圖片：contain + 縮圖＋左右切換 */
   .bigimg{position:relative;width:100%;aspect-ratio:4/3;background:#0b0b0b;border-radius:14px;overflow:hidden}
   .bigimg img{width:100%;height:100%;object-fit:contain;background:#0b0b0b}
   .nav-btn{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.9);border:none;border-radius:999px;padding:8px 12px;cursor:pointer;box-shadow:var(--shadow)}
@@ -82,7 +80,7 @@
           <input type="text" id="searchInput" placeholder="搜尋商品…" />
           <select id="runFilter">
             <option value="">全部連線</option>
-            <!-- 會動態插入：最近連線、各連線 -->
+            <!-- 這裡會動態插入：最近連線 & 其他連線 -->
           </select>
           <select id="categoryFilter"><option value="">全部分類</option></select>
           <select id="sortSelect">
@@ -109,7 +107,7 @@
     <p id="emptyTip" class="muted" style="display:none;margin-top:12px">目前沒有商品</p>
   </div>
 
-  <!-- 詳情 -->
+  <!-- 詳情 Modal -->
   <div id="detailModal" class="modal">
     <div class="overlay"></div>
     <div class="panel">
@@ -138,7 +136,7 @@
     </div>
   </div>
 
-  <!-- 連結選單 -->
+  <!-- 連絡 Modal -->
   <div id="linksModal" class="modal modal-sm">
     <div class="overlay"></div>
     <div class="panel">
@@ -156,28 +154,23 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // === Supabase ===
+    // === Supabase 設定（你的值） ===
     const supabaseUrl='https://llbpmqyjigovxixeohzr.supabase.co';
     const supabaseKey='sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';
     const BUCKET='yuyu.f86';
     const supabaseClient=supabase.createClient(supabaseUrl,supabaseKey);
 
-    // === State ===
+    // === 狀態 ===
     let productsData=[], runs=[], productRuns=[], OPTIONS={categories:[]};
-    let recentRunId=null;
+    let recentRunId=null;           // 真 run 的 id 或 pseudo id
+    const RUN_PSEUDO_PREFIX='p:';   // 以產品萃取的「字串連線」id 前綴
+    const runIdToLabel=new Map();   // 真 run -> 顯示名稱（title|code|region）
 
     // === Helpers ===
-    function publicUrlFromPath(path){
-      if(!path) return '';
-      const { data }=supabaseClient.storage.from(BUCKET).getPublicUrl(path);
-      return data?.publicUrl||'';
-    }
-    function fmt(n){ if(n==null) return ''; return 'NT$'+Number(n||0).toLocaleString('zh-TW'); }
-    function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-    function byNew(a,b){
-      if(a.created_at&&b.created_at) return new Date(b.created_at)-new Date(a.created_at);
-      if(a.id&&b.id) return b.id-a.id; return 0;
-    }
+    const fmt=(n)=>n==null?'':'NT$'+Number(n||0).toLocaleString('zh-TW');
+    function publicUrlFromPath(path){ if(!path) return ''; const { data }=supabaseClient.storage.from(BUCKET).getPublicUrl(path); return data?.publicUrl||''; }
+    function byNew(a,b){ if(a.created_at&&b.created_at) return new Date(b.created_at)-new Date(a.created_at); if(a.id&&b.id) return (''+b.id).localeCompare(''+a.id); return 0; }
+    function runLabelFromProduct(p){ return (p.eta_text||p.run_label||p.run||p.batch||'').trim(); }
 
     function parseImages(p){
       const candidate = p.images ?? p.image_paths ?? p.image ?? p.pictures ?? p.photo_paths ?? '';
@@ -189,16 +182,15 @@
       return arr.map(s => /^https?:\/\//i.test(s) ? s : publicUrlFromPath(s));
     }
 
-    // === Render ===
+    // === 卡片 ===
     function cardHTML(p){
-      const imgs=parseImages(p);
-      const cover=imgs[0]||'';
+      const cover=(parseImages(p)[0]||'');
       return `<div class="card" data-id="${p.id}">
-        <div class="thumb">${cover?`<img src="${cover}" alt="${escapeHtml(p.name||'')}" loading="lazy">`:''}</div>
+        <div class="thumb">${cover?`<img src="${cover}" alt="">`:''}</div>
         <div class="pad">
-          <p class="name">${escapeHtml(p.name||'未命名')}</p>
+          <p class="name">${(p.name||'未命名')}</p>
           <div class="price">${fmt(p.price)}</div>
-          ${p.category?`<div class="cat">${escapeHtml(p.category)}</div>`:''}
+          ${p.category?`<div class="cat">${p.category}</div>`:''}
         </div>
       </div>`;
     }
@@ -208,45 +200,70 @@
       empty.style.display='none'; box.innerHTML=list.map(cardHTML).join('');
     }
 
+    // === 以產品建立「字串連線」fallback ===
+    function buildPseudoRunsFromProducts(prods){
+      const groups = new Map(); // label -> latestCreatedAt
+      prods.forEach(p=>{
+        const label = runLabelFromProduct(p);
+        if(!label) return;
+        const ts = p.created_at ? new Date(p.created_at).getTime() : 0;
+        groups.set(label, Math.max(groups.get(label)||0, ts));
+      });
+      return [...groups.entries()]
+        .sort((a,b)=>b[1]-a[1])
+        .map(([label])=>({ id: RUN_PSEUDO_PREFIX+encodeURIComponent(label), title: label, pseudo: true }));
+    }
+
+    // === 首頁的連線卡（仍然只顯示 runs.is_featured） ===
     function renderHomeRuns(){
       const wrap=document.getElementById('homeRuns'); wrap.innerHTML='';
-      runs.filter(r=>r.is_featured).forEach(r=>{
+      runs.filter(r=>!r.pseudo && r.is_featured).forEach(r=>{
+        const name=r.title||r.code||r.region||('連線#'+r.id);
         const el=document.createElement('div'); el.className='runCard';
-        el.innerHTML=`<div><strong>${escapeHtml(r.title||r.code||r.region||('連線#'+r.id))}</strong></div>
+        el.innerHTML=`<div><strong>${name}</strong></div>
           <div class="muted">${r.start_date||''}${r.end_date?(' ~ '+r.end_date):''}</div>
           ${r.ship_start_date?`<div class="muted">寄送：${r.ship_start_date}</div>`:''}
-          ${r.note?`<div style="margin-top:6px">${escapeHtml(r.note)}</div>`:''}`;
-        el.onclick=()=>{
-          document.getElementById('runFilter').value=String(r.id);
-          applyFilters();
-          window.scrollTo({top:document.getElementById('shopPage').offsetTop-10,behavior:'smooth'});
-        };
+          ${r.note?`<div style="margin-top:6px">${r.note}</div>`:''}`;
+        el.onclick=()=>{ document.getElementById('runFilter').value=String(r.id); applyFilters(); window.scrollTo({top:document.getElementById('shopPage').offsetTop-10,behavior:'smooth'}); };
         wrap.appendChild(el);
       });
     }
 
-    // === Filter / Sort ===
+    // === 篩選 ===
     function applyFilters(){
       const kw=(document.getElementById('searchInput').value||'').toLowerCase();
       const cat=document.getElementById('categoryFilter').value;
       const sort=document.getElementById('sortSelect').value;
       const sel=document.getElementById('runFilter').value;
 
-      let chosenRunId=null;
-      if(sel==='__recent'){ chosenRunId = recentRunId; }
-      else if(sel){ chosenRunId = sel; } // 保持字串，支援 UUID
-
-      let allowed=null;
-      if(chosenRunId!=null){
-        const ids = productRuns
-          .filter(x=>String(x.run_id)===String(chosenRunId))
-          .map(x=>String(x.product_id));
-        allowed = new Set(ids);
+      let matchFn = ()=>true; // 預設：全部連線
+      if(sel==='__recent'){ // 最近
+        if(String(recentRunId).startsWith(RUN_PSEUDO_PREFIX)){
+          const label = decodeURIComponent(String(recentRunId).slice(RUN_PSEUDO_PREFIX.length));
+          matchFn = p => runLabelFromProduct(p)===label;
+        }else{
+          const ids = new Set(productRuns.filter(x=>String(x.run_id)===String(recentRunId)).map(x=>String(x.product_id)));
+          matchFn = p => ids.has(String(p.id));
+        }
+      }else if(sel){ // 指定某連線
+        if(String(sel).startsWith(RUN_PSEUDO_PREFIX)){
+          const label = decodeURIComponent(String(sel).slice(RUN_PSEUDO_PREFIX.length));
+          matchFn = p => runLabelFromProduct(p)===label;
+        }else{
+          const ids = new Set(productRuns.filter(x=>String(x.run_id)===String(sel)).map(x=>String(x.product_id)));
+          // 若沒有對應關係（可能沒建 product_runs），退回用產品的文字連線比
+          if(ids.size>0){
+            matchFn = p => ids.has(String(p.id));
+          }else{
+            const label = runIdToLabel.get(String(sel)) || '';
+            matchFn = p => label && runLabelFromProduct(p)===label;
+          }
+        }
       }
 
-      let list=productsData.filter(p=>{
-        if(allowed && !allowed.has(String(p.id))) return false;
-        const text=`${p.name||''} ${(p.eta_text||'')} ${(Array.isArray(p.tags)?p.tags.join(','):(p.tags||''))}`.toLowerCase();
+      let list = productsData.filter(p=>{
+        if(!matchFn(p)) return false;
+        const text=`${p.name||''} ${p.eta_text||''} ${(Array.isArray(p.tags)?p.tags.join(','):(p.tags||''))}`.toLowerCase();
         const hitKw=!kw||text.includes(kw);
         const hitCat=!cat||p.category===cat;
         return hitKw&&hitCat;
@@ -260,180 +277,132 @@
       renderList(list);
     }
 
-    // === Detail (gallery) ===
+    // === 詳情（圖庫） ===
     const detailModal=document.getElementById('detailModal');
     detailModal.querySelector('.overlay').addEventListener('click',()=> detailModal.style.display='none');
-
     let galleryImages=[], galleryIndex=0;
-    function updateBig(){
-      const imgEl=document.getElementById('dImg');
-      imgEl.src = galleryImages[galleryIndex] || '';
-      Array.from(document.getElementById('thumbs').children).forEach((el,idx)=>{
-        if(idx===galleryIndex) el.classList.add('active'); else el.classList.remove('active');
-      });
-    }
-    function buildThumbs(){
-      const bar=document.getElementById('thumbs'); bar.innerHTML='';
-      galleryImages.forEach((src,idx)=>{
-        const d=document.createElement('div'); d.className='t'+(idx===galleryIndex?' active':'');
-        d.innerHTML=`<img src="${src}" alt="thumb ${idx+1}" loading="lazy">`;
-        d.onclick=()=>{ galleryIndex=idx; updateBig(); };
-        bar.appendChild(d);
-      });
-    }
-    document.getElementById('btnPrev').addEventListener('click',()=>{
-      if(!galleryImages.length) return;
-      galleryIndex = (galleryIndex - 1 + galleryImages.length) % galleryImages.length;
-      updateBig();
-    });
-    document.getElementById('btnNext').addEventListener('click',()=>{
-      if(!galleryImages.length) return;
-      galleryIndex = (galleryIndex + 1) % galleryImages.length;
-      updateBig();
-    });
-    window.addEventListener('keydown',(e)=>{
-      if(detailModal.style.display!=='block') return;
-      if(e.key==='ArrowLeft') document.getElementById('btnPrev').click();
-      if(e.key==='ArrowRight') document.getElementById('btnNext').click();
-      if(e.key==='Escape') detailModal.style.display='none';
-    });
-
+    function buildThumbs(){ const bar=document.getElementById('thumbs'); bar.innerHTML=''; galleryImages.forEach((src,idx)=>{ const d=document.createElement('div'); d.className='t'+(idx===galleryIndex?' active':''); d.innerHTML=`<img src="${src}" loading="lazy">`; d.onclick=()=>{ galleryIndex=idx; updateBig(); }; bar.appendChild(d); }); }
+    function updateBig(){ const img=document.getElementById('dImg'); img.src=galleryImages[galleryIndex]||''; Array.from(document.getElementById('thumbs').children).forEach((el,i)=>el.classList.toggle('active',i===galleryIndex)); }
+    document.getElementById('btnPrev').addEventListener('click',()=>{ if(!galleryImages.length) return; galleryIndex=(galleryIndex-1+galleryImages.length)%galleryImages.length; updateBig(); });
+    document.getElementById('btnNext').addEventListener('click',()=>{ if(!galleryImages.length) return; galleryIndex=(galleryIndex+1)%galleryImages.length; updateBig(); });
+    window.addEventListener('keydown',e=>{ if(detailModal.style.display!=='block') return; if(e.key==='ArrowLeft') document.getElementById('btnPrev').click(); if(e.key==='ArrowRight') document.getElementById('btnNext').click(); if(e.key==='Escape') detailModal.style.display='none'; });
     function openDetail(id){
       const p=productsData.find(x=>String(x.id)===String(id)); if(!p) return;
-      galleryImages = parseImages(p); if(!galleryImages.length){ galleryImages=['']; }
+      galleryImages=parseImages(p); if(!galleryImages.length) galleryImages=[''];
       galleryIndex=0; buildThumbs(); updateBig();
-
-      document.getElementById('dName').textContent=p.name||'';
-      document.getElementById('dId').textContent=p.product_id?String(p.product_id):String(p.id||'-');
-      document.getElementById('dCat').textContent=p.category||'-';
-      document.getElementById('dStatus').textContent=p.status||'-';
-      document.getElementById('dArrival').textContent=p.arrival_time||p.arrival_date||'-';
-      document.getElementById('dNote').textContent=(p.note||p.remark||p.eta_text||'-');
-      document.getElementById('dPrice').textContent=fmt(p.price);
-
-      const tagsBox=document.getElementById('dTags'); tagsBox.innerHTML='';
-      (Array.isArray(p.tags)?p.tags:[]).forEach(t=>{
-        const s=document.createElement('span');
-        s.style.cssText='display:inline-block;padding:3px 10px;border:1px solid var(--border);border-radius:999px;font-size:12px;margin-right:6px';
-        s.textContent=t; tagsBox.appendChild(s);
-      });
-
-      document.getElementById('btnCopy').onclick=()=>navigator.clipboard
-        .writeText(`我要下單：${p.name||''} 1件（商品編號：${p.product_id??p.id}）`)
-        .then(()=>alert('已複製下單格式'));
-      document.getElementById('btnAsk').onclick=()=> openLinks();
-
+      dName.textContent=p.name||''; dId.textContent=p.product_id??p.id??'-'; dCat.textContent=p.category||'-';
+      dStatus.textContent=p.status||'-'; dArrival.textContent=p.arrival_time||p.arrival_date||'-'; dNote.textContent=(p.note||p.remark||p.eta_text||'-');
+      dPrice.textContent=fmt(p.price);
+      const tagsBox=document.getElementById('dTags'); tagsBox.innerHTML=''; (Array.isArray(p.tags)?p.tags:[]).forEach(t=>{ const s=document.createElement('span'); s.style.cssText='display:inline-block;padding:3px 10px;border:1px solid var(--border);border-radius:999px;font-size:12px;margin-right:6px'; s.textContent=t; tagsBox.appendChild(s); });
+      btnCopy.onclick=()=>navigator.clipboard.writeText(`我要下單：${p.name||''} 1件（商品編號：${p.product_id??p.id}）`).then(()=>alert('已複製下單格式'));
+      btnAsk.onclick=()=> linksModal.style.display='block';
       detailModal.style.display='block';
     }
-    document.getElementById('productList').addEventListener('click', e=>{
-      let el=e.target; while(el && !el.classList.contains('card')) el=el.parentElement;
-      if(el) openDetail(el.getAttribute('data-id'));
-    });
+    document.getElementById('productList').addEventListener('click', e=>{ let el=e.target; while(el && !el.classList.contains('card')) el=el.parentElement; if(el) openDetail(el.getAttribute('data-id')); });
 
-    // === Links ===
-    const linksModal=document.getElementById('linksModal');
-    linksModal.querySelector('.overlay').addEventListener('click',()=> linksModal.style.display='none');
-    document.getElementById('linksClose').addEventListener('click',()=> linksModal.style.display='none');
-    function openLinks(){ linksModal.style.display='block'; }
-
-    // === Supabase queries（含排序 fallback） ===
+    // === Supabase 讀取 ===
     async function fetchRuns(){
-      // 1) created_at desc
-      let res = await supabaseClient
-        .from('runs')
-        .select('id,code,title,region,start_date,end_date,note,ship_start_date,is_active,is_featured,created_at')
-        .order('created_at',{ascending:false});
-      if(res.error){
-        console.warn('fetchRuns fallback: created_at 無法排序，改用 start_date', res.error);
-        // 2) start_date desc
-        res = await supabaseClient
-          .from('runs')
-          .select('id,code,title,region,start_date,end_date,note,ship_start_date,is_active,is_featured');
-          // 不加 order 先試，避免某些型別混亂報錯
-        if(res.error){
-          console.warn('fetchRuns fallback2: 無排序直接取', res.error);
-          res = await supabaseClient.from('runs').select('id,code,title,region,start_date,end_date,note,ship_start_date,is_active,is_featured');
-        }
-      }
+      // 嘗試 created_at 排序；失敗就不排序
+      let res = await supabaseClient.from('runs').select('id,code,title,region,start_date,end_date,note,ship_start_date,is_featured,created_at').order('created_at',{ascending:false});
+      if(res.error){ console.warn('runs created_at 排序失敗，走無排序',res.error); res = await supabaseClient.from('runs').select('id,code,title,region,start_date,end_date,note,ship_start_date,is_featured'); }
       return res.data||[];
     }
-
     async function fetchProductRuns(runIds){
       let q=supabaseClient.from('product_runs').select('product_id,run_id');
       if(runIds?.length) q=q.in('run_id',runIds);
-      const { data, error }=await q;
-      if(error){ console.error('fetchProductRuns error:', error); return []; }
+      const { data, error }=await q; if(error){ console.error('product_runs error',error); return []; }
       return data||[];
     }
-
     async function fetchProducts(){
       const { data, error }=await supabaseClient.from('products').select('*');
-      if(error){ console.error('fetchProducts error:', error); return []; }
+      if(error){ console.error('products error',error); return []; }
       return data||[];
     }
-
     async function loadOptions(){
-      try{
-        const { data, error }=await supabaseClient.storage.from(BUCKET).download('admin/options.json');
-        if(!error&&data){
-          const json=JSON.parse(await data.text());
-          if(Array.isArray(json.categories)) OPTIONS.categories=json.categories;
-        }
-      }catch(_){}
+      try{ const { data, error }=await supabaseClient.storage.from(BUCKET).download('admin/options.json'); if(!error&&data){ const json=JSON.parse(await data.text()); if(Array.isArray(json.categories)) OPTIONS.categories=json.categories; } }catch(_){}
     }
 
     // === UI 注入 ===
     function fillCategories(){
       const sel=document.getElementById('categoryFilter');
       sel.querySelectorAll('option:not([value=""])').forEach(o=>o.remove());
-      const fromOptions=OPTIONS.categories||[];
-      const fromProducts=[...new Set(productsData.filter(p=>p.category).map(p=>p.category))];
-      const all=[...new Set([...fromOptions,...fromProducts])].filter(Boolean).sort((a,b)=>a.localeCompare(b,'zh-Hant'));
-      all.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+      const values=[...new Set([... (OPTIONS.categories||[]), ...productsData.map(p=>p.category).filter(Boolean)])]
+        .sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+      values.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; sel.appendChild(o); });
     }
     function fillRuns(){
       const sel=document.getElementById('runFilter');
       sel.querySelectorAll('option:not([value=""])').forEach(o=>o.remove());
 
-      if(runs.length){
-        // 以目前抓到清單第一筆為「最近連線」
-        recentRunId = runs[0].id;
-        const recentOpt=document.createElement('option');
-        recentOpt.value='__recent';
-        recentOpt.textContent='最近連線';
-        sel.appendChild(recentOpt);
+      // 最近連線
+      if(recentRunId!=null){
+        const o=document.createElement('option'); o.value='__recent'; o.textContent='最近連線'; sel.appendChild(o);
       }
-      runs.forEach(r=>{
-        const opt=document.createElement('option');
-        opt.value=String(r.id);
-        opt.textContent=r.title||r.code||r.region||(`連線#${r.id}`);
-        sel.appendChild(opt);
+
+      // 真 runs
+      runs.filter(r=>!r.pseudo).forEach(r=>{
+        const name=r.title||r.code||r.region||(`連線#${r.id}`);
+        runIdToLabel.set(String(r.id), name);
+        const o=document.createElement('option'); o.value=String(r.id); o.textContent=name; sel.appendChild(o);
+      });
+
+      // 假 runs（以產品萃取）
+      runs.filter(r=>r.pseudo).forEach(r=>{
+        const o=document.createElement('option'); o.value=r.id; o.textContent=r.title; sel.appendChild(o);
       });
     }
+
     async function loadHomeNotice(){
       const { data }=await supabaseClient.from('site_meta').select('value').eq('key','home_notice').maybeSingle();
       document.getElementById('homeNotice').textContent=data?.value||'';
       document.getElementById('home').style.display='block';
     }
 
-    // === Start ===
+    // === 啟動 ===
     async function enterShop(){
       document.getElementById('loading').style.display='none';
       document.getElementById('shopPage').style.display='block';
 
       await loadOptions();
-      runs=await fetchRuns();
-      await loadHomeNotice();
-      productsData=await fetchProducts();
-      productRuns=await fetchProductRuns(runs.map(r=>r.id));
+      // 先抓產品（供 fallback 用）
+      productsData = await fetchProducts();
 
+      // 再抓 runs
+      let realRuns = await fetchRuns();
+
+      // 如果沒有真 runs，就用產品的 eta_text 等欄位建「字串連線」
+      if(!realRuns || realRuns.length===0){
+        runs = buildPseudoRunsFromProducts(productsData);
+      }else{
+        runs = realRuns;
+      }
+
+      // 以「最新」當最近連線
+      if(runs.length){
+        if(runs[0].pseudo){
+          recentRunId = runs[0].id; // 已按最新產品排序
+        }else{
+          // 真 runs 直接取第 1 筆；若要改規則可調整
+          recentRunId = runs[0].id;
+        }
+      }
+
+      // 如果有真 runs，就抓對應關係
+      if(runs.some(r=>!r.pseudo)){
+        const realIds = runs.filter(r=>!r.pseudo).map(r=>r.id);
+        productRuns = await fetchProductRuns(realIds);
+      } else {
+        productRuns = []; // 全靠文字連線比對
+      }
+
+      await loadHomeNotice();
       fillCategories();
       fillRuns();
       renderHomeRuns();
       applyFilters();
     }
 
-    // Events
+    // 事件
     document.getElementById('searchInput').addEventListener('input',applyFilters);
     document.getElementById('categoryFilter').addEventListener('change',applyFilters);
     document.getElementById('sortSelect').addEventListener('change',applyFilters);
