@@ -1,4 +1,3 @@
-<!-- 省略：和你現有一樣的 <head> 樣式，保持版面不動 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -33,7 +32,7 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
 /* Modal */
 .modal{display:none;position:fixed;inset:0;z-index:1000}
 .overlay{position:absolute;inset:0;background:rgba(0,0,0,.45)}
-.sheet{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(980px,92vw);max-height:90vh;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:16px}
+.sheet{position:absolute;left:50%;top:50%;transform:translate(-50%, -50%);width:min(980px,92vw);max-height:90vh;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:16px}
 .sheet h3{margin:0 0 8px}
 </style>
 </head>
@@ -145,8 +144,14 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
     <div class="panel">
       <h3 style="margin:0 0 10px">從共用池「複製」商品到某次連線</h3>
       <div class="row">
-        <div><label>選擇 Pool 連線（is_pool=true）</label><select id="poolSelect"><option value="">— 選擇 Pool —</option></select></div>
-        <div><label>目標連線（實際跑團）</label><select id="poolTarget"><option value="">— 選擇目標連線 —</option></select></div>
+        <div>
+          <label>選擇 Pool 連線（is_pool=true）</label>
+          <select id="poolSelect"><option value="">— 選擇 Pool —</option></select>
+        </div>
+        <div>
+          <label>目標連線（實際跑團）</label>
+          <select id="poolTarget"><option value="">— 選擇目標連線 —</option></select>
+        </div>
       </div>
       <div class="small muted">說明：這裡是「複製」對應，會新增 <code>product_runs</code> 到目標連線；Pool 仍會保留，不會被移除。複製後同步：<code>arrival_time</code>＝目標連線 <code>ship_start_date</code>、<code>eta_text</code>＝目標連線標題。</div>
     </div>
@@ -197,6 +202,22 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
         <span class="muted small">儲存在 <code>site_meta</code>（key：<code>rate_JPY</code>/<code>rate_KRW</code>/<code>rate_USD</code>）。</span>
       </div>
     </div>
+
+    <!-- 新增：首頁「最近連線」/ 公告 -->
+    <div class="panel">
+      <h3 style="margin:0 0 10px">首頁「最近連線」/ 公告</h3>
+      <div class="row" style="grid-template-columns:1fr">
+        <div>
+          <label>顯示於前台首頁頂部（index 的提醒框）</label>
+          <textarea id="homeNoticeInput" placeholder="例：✈️ 最近連線：9/6～9 日本北海道"></textarea>
+        </div>
+      </div>
+      <div class="flex" style="gap:10px;margin-top:8px">
+        <button class="btn" id="btnSaveHomeNotice">儲存公告</button>
+        <button class="btn ghost" id="btnClearHomeNotice">清空</button>
+        <span class="muted small">儲存在 <code>site_meta</code> 的 <code>home_notice</code>，前台已自動讀取顯示。</span>
+      </div>
+    </div>
   </section>
 </div>
 
@@ -239,12 +260,13 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// === Supabase
 const supabaseUrl='https://llbpmqyjigovxixeohzr.supabase.co';
 const supabaseKey='sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';
 const BUCKET='yuyu.f86';
 const sb=supabase.createClient(supabaseUrl,supabaseKey);
 
-// Tabs
+// === Tabs
 document.querySelectorAll('.tabbtn').forEach(btn=>{
   btn.onclick=()=>{
     document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
@@ -254,12 +276,12 @@ document.querySelectorAll('.tabbtn').forEach(btn=>{
   };
 });
 
-// Helpers
+// === Helpers
 function publicUrlFromPath(path){ if(!path) return ''; const { data }=sb.storage.from(BUCKET).getPublicUrl(path); return data?.publicUrl||''; }
 let RATES={JPY:0.22, KRW:0.024, USD:32.0};
 let runsCache=[], poolRuns=[], normalRuns=[];
 
-// Rates
+// === Rates
 async function loadRates(){
   const keys=['rate_JPY','rate_KRW','rate_USD'];
   const { data }=await sb.from('site_meta').select('key,value').in('key', keys);
@@ -281,7 +303,7 @@ btnSaveRates.onclick=async()=>{
   await loadRates(); alert('已儲存匯率');
 };
 
-// 成本自算
+// === 成本自算
 ['pCostCurrency','pCostForeign'].forEach(id=>{
   document.getElementById(id).addEventListener('input',()=>{
     const cur=pCostCurrency.value, amt=Number(pCostForeign.value||0);
@@ -299,7 +321,7 @@ btnSaveRates.onclick=async()=>{
   });
 });
 
-// Runs
+// === Runs
 function runLabel(r){ return r.title||r.code||r.region||('Run#'+r.id); }
 async function loadRuns(){
   const { data }=await sb.from('runs').select('*').order('created_at',{ascending:false});
@@ -320,7 +342,7 @@ async function loadRuns(){
 
   await renderRunsTable();
 
-  // Pool tab 下拉
+  // Pool 下拉
   poolSelect.innerHTML='<option value="">— 選擇 Pool —</option>';
   poolRuns.forEach(r=> poolSelect.appendChild(new Option(runLabel(r), r.id)));
   poolTarget.innerHTML='<option value="">— 選擇目標連線 —</option>';
@@ -400,14 +422,14 @@ btnRunCreate.onclick=async()=>{
 };
 btnRunReset.onclick=()=>{ [rTitle,rCode,rRegion,rStart,rEnd,rShip,rNote].forEach(i=>i.value=''); rActive.value='true'; rFeatured.value='false'; rIsPool.value='false'; delete document.getElementById('runForm').dataset.editId; btnRunCreate.textContent='新增連線'; };
 
-// Category datalist
+// === Categories datalist
 async function fillCategoryDatalist(){
   const { data }=await sb.from('products').select('category').not('category','is',null);
   const set=new Set((data||[]).map(x=>x.category).filter(Boolean));
   categoryList.innerHTML=''; Array.from(set).sort((a,b)=>a.localeCompare(b,'zh-Hant')).forEach(c=>categoryList.appendChild(new Option('',c)));
 }
 
-// Auto product_id
+// === Auto product_id
 async function genNextPid(){
   const d=new Date(), prefix=`P${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-`;
   const { data } = await sb.from('products').select('product_id').ilike('product_id', `${prefix}%`).order('product_id',{ascending:false}).limit(1);
@@ -416,7 +438,7 @@ async function genNextPid(){
 }
 function parseTags(s){ const raw=(s||'').trim(); return raw? raw.split(',').map(x=>x.trim()).filter(Boolean):null; }
 
-// Upload helpers
+// === Upload helpers
 const addFilesState=[]; const editFilesState=[];
 function renderPreviews(box, state){
   box.innerHTML=''; state.forEach((f,idx)=>{ const div=document.createElement('div'); div.className='preview';
@@ -445,7 +467,7 @@ async function uploadAll(state, baseFolder){
   return out;
 }
 
-// Create Product
+// === Create Product
 btnCreateProduct.onclick=async()=>{
   let pid=(pPid.value||'').trim(); if(!pid) pid=await genNextPid();
   let runObj=null; try{ runObj=JSON.parse(pRunAssign.value||''); }catch(_){}
@@ -474,7 +496,7 @@ btnCreateProduct.onclick=async()=>{
   alert('新增成功'); await fillCategoryDatalist(); await loadProducts();
 };
 
-// Table / Edit / Delete
+// === Table / Edit / Delete
 function nt(price,cost){ if(price==null||cost==null) return '—'; return Math.round(Number(price)-Number(cost)); }
 async function loadProducts(runFilterId=null){
   let q=sb.from('products').select('id,name,price,category,product_id,eta_text,cost_jpy,cost_nt,img_url,images').order('created_at',{ascending:false}).limit(50);
@@ -510,7 +532,7 @@ window.deleteProduct=async(id)=>{
   await loadProducts(prodFilterRun.value||null); alert('已刪除');
 };
 
-// Edit modal
+// === Edit modal
 const editModal=document.getElementById('editModal'); editModal.querySelector('.overlay').onclick=()=> editModal.style.display='none';
 document.getElementById('btnEditCancel').onclick=()=> editModal.style.display='none';
 let editing=null, keepOld=true, oldMain=null, oldImages=[];
@@ -567,7 +589,7 @@ btnEditSave.onclick=async()=>{
   alert('已更新'); editModal.style.display='none'; await fillCategoryDatalist(); await loadProducts(prodFilterRun.value||null);
 };
 
-// Pool 派送
+// === Pool 派送
 let poolCheckedAll=false;
 poolSelect.addEventListener('change', loadPoolProducts);
 poolSelectAll.onclick=()=>{ poolCheckedAll=!poolCheckedAll; document.querySelectorAll('.poolItemChk').forEach(c=> c.checked=poolCheckedAll); };
@@ -619,7 +641,7 @@ poolCopy.onclick=async()=>{
   alert(`已複製 ${ids.length} 件到目標連線，並同步到貨／eta_text`);
 };
 
-// Bulk
+// === Bulk
 let bulkPreviewCount=0;
 bulkPreview.onclick=async()=>{
   const from=bulkFrom.value||''; const to=bulkTo.value||''; if(!from||!to){ alert('請選來源與目標'); return; }
@@ -643,10 +665,26 @@ bulkDo.onclick=async()=>{
   alert(`已複製 ${ids.length} 件到目標連線，並同步到貨／eta_text`); bulkInfo.textContent='';
 };
 
-// init
+// === Init
 document.querySelectorAll('.tabbtn').forEach((b,i)=>{ if(i===0) b.click(); });
 (async function init(){
   await loadRates(); await loadRuns(); await fillCategoryDatalist(); await loadProducts();
+
+  // 設定頁面：讀取首頁公告
+  const { data }=await sb.from('site_meta').select('value').eq('key','home_notice').maybeSingle();
+  homeNoticeInput.value = data?.value || '';
+
+  btnSaveHomeNotice.onclick = async ()=>{
+    const v = (homeNoticeInput.value||'').trim();
+    await sb.from('site_meta').upsert({key:'home_notice', value:v},{onConflict:'key'});
+    alert('已儲存首頁公告');
+  };
+  btnClearHomeNotice.onclick = async ()=>{
+    homeNoticeInput.value='';
+    await sb.from('site_meta').upsert({key:'home_notice', value:''},{onConflict:'key'});
+    alert('已清空首頁公告');
+  };
+
   poolCTA.innerHTML='提示：共用池請在「Runs」建立（勾選 <strong>Pool</strong>）。之後到「Pool 派送」選 Pool → 多選商品 → 複製到目標連線（會同步到貨日期與 eta）。';
 })();
 </script>
