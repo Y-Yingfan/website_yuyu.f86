@@ -43,8 +43,16 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
     <div class="panel">
       <h3 style="margin:0 0 10px">新增連線</h3>
       <div class="row">
-        <div><label>地區 region</label>
-          <select id="runRegion"><option value="">—</option><option>Japan</option><option>Korea</option><option>Taiwan</option><option>Other</option></select>
+        <div><label>地區 region（兩碼代碼）</label>
+          <select id="runRegion">
+            <option value="">—</option>
+            <option value="JP">JP（日本）</option>
+            <option value="KR">KR（韓國）</option>
+            <option value="TW">TW（台灣）</option>
+            <option value="HK">HK（香港）</option>
+            <option value="SG">SG（新加坡）</option>
+            <option value="OTHER">OTHER（其他）</option>
+          </select>
         </div>
         <div><label>連線名稱 title</label><input id="runTitle" placeholder="例：9/26 東京"/></div>
         <div><label>開始日</label><input id="runStart" type="date"/></div>
@@ -130,7 +138,7 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
     </div>
   </section>
 
-  <!-- Pool 派送：從共用池多選派送到各連線 -->
+  <!-- Pool 派送 -->
   <section id="tab-pool" style="display:none">
     <div class="panel">
       <h3 style="margin:0 0 10px">從共用池多選派送</h3>
@@ -234,10 +242,7 @@ async function loadJpyRate(){
 }
 
 // RUNS
-let runsCache=[];
-let poolRuns=[]; // is_pool=true
-let normalRuns=[];
-
+let runsCache=[], poolRuns=[], normalRuns=[];
 function runLabel(r){ return r.title||r.code||r.region||('Run#'+r.id); }
 
 async function loadRuns(){
@@ -273,7 +278,7 @@ async function loadRuns(){
     tb.appendChild(tr);
   });
 
-  // 商品新增的「指派到連線」：分組
+  // 各下拉
   const assign=document.getElementById('pRunAssign');
   const prodFilter=document.getElementById('prodFilterRun');
   const poolPick=document.getElementById('poolPick');
@@ -282,7 +287,7 @@ async function loadRuns(){
   const bmDst=document.getElementById('bmDst');
   [assign,prodFilter,poolPick,poolTarget,bmSrc,bmDst].forEach(sel=> sel.innerHTML='');
 
-  // assign 下拉
+  // assign：分組
   const ogPool=document.createElement('optgroup'); ogPool.label='【共用池】';
   const ogRuns=document.createElement('optgroup'); ogRuns.label='【一般連線】';
   poolRuns.forEach(r=>{ const o=document.createElement('option'); o.value=JSON.stringify({id:r.id,title:r.title||'',note:r.note||''}); o.textContent=runLabel(r); ogPool.appendChild(o); });
@@ -299,11 +304,12 @@ async function loadRuns(){
   normalRuns.forEach(r=>{ const o=document.createElement('option'); o.value=r.id; o.textContent=runLabel(r); ogPFRuns.appendChild(o); });
   prodFilter.appendChild(ogPFPool); prodFilter.appendChild(ogPFRuns);
 
-  // pool 派送：選池子、目標連線
+  // pool 派送
   poolPick.appendChild(new Option('— 選擇池子 —',''));
   poolRuns.forEach(r=> poolPick.appendChild(new Option(runLabel(r), JSON.stringify({id:r.id,title:r.title||''}))));
   poolTarget.appendChild(new Option('— 選擇連線 —',''));
   normalRuns.forEach(r=> poolTarget.appendChild(new Option(runLabel(r), JSON.stringify({id:r.id,title:r.title||''}))));
+
   // Bulk Move
   bmSrc.appendChild(new Option('— 選擇連線 —',''));
   bmDst.appendChild(new Option('— 選擇連線 —',''));
@@ -377,9 +383,8 @@ async function genNextPid(){
 async function loadProducts(runFilterId=null){
   let q=sb.from('products').select('id,name,price,category,product_id,eta_text,cost_jpy,cost_nt').order('created_at',{ascending:false}).limit(50);
   if(runFilterId){
-    // 依連線篩選
     const { data:pr }=await sb.from('product_runs').select('product_id').eq('run_id',runFilterId);
-    const ids=(pr||[]).map(x=>x.product_id); if(ids.length) q=q.in('id',ids); else q=q.in('id',['00000000-0000-0000-0000-000000000000']); // 空
+    const ids=(pr||[]).map(x=>x.product_id); if(ids.length) q=q.in('id',ids); else q=q.in('id',['00000000-0000-0000-0000-000000000000']);
   }
   const { data, error } = await q;
   if(error){ console.error(error); return; }
@@ -484,7 +489,7 @@ document.querySelector('#productsTable').addEventListener('click', async (e)=>{
       product_id: pid,
       eta_text: eta,
       cost_jpy: tr.querySelector('.ep-cj').value? Number(tr.querySelector('.ep-cj').value): null,
-      cost_nt : tr.querySelector('.ep-cn').value? Number(tr.querySelector('.ep-cn').value): null
+      cost_nt : tr.querySelector('.ep-cn').value? Number(tr.querySelector('.ep-cn').value) : null
     };
     if(!payload.name){ alert('名稱不可空白'); return; }
     const res=await tolerantWrite('products',payload,'update',{id});
@@ -538,7 +543,6 @@ document.getElementById('poolSend').onclick=async()=>{
   const ids=[...document.querySelectorAll('#poolTable .pool-ck:checked')].map(ck=> ck.closest('tr').dataset.id);
   if(!ids.length){ alert('請至少勾選一個商品'); return; }
 
-  // 取商品資料
   const { data: list } = await sb.from('products').select('*').in('id', ids);
   let ok=0;
   for(const p of (list||[])){
@@ -547,15 +551,12 @@ document.getElementById('poolSend').onclick=async()=>{
       const payload={ name:p.name, price:p.price, category:p.category, product_id:newPid, status:p.status, arrival_time:p.arrival_time, eta_text: dst.title||null, note:p.note, img_url:p.img_url, tags:p.tags, cost_jpy:p.cost_jpy, cost_nt:p.cost_nt };
       const ins=await tolerantWrite('products',payload,'insert');
       if(!ins.error && ins.data?.[0]?.id){
-        await sb.from('product_runs').insert({product_id:ins.data[0].id, run_id:dst.id});
-        ok++;
+        await sb.from('product_runs').insert({product_id:ins.data[0].id, run_id:dst.id}); ok++;
       }
     }else{
-      // move：更新 eta_text & 關聯
       await tolerantWrite('products',{eta_text: dst.title||null},'update',{id:p.id});
       await sb.from('product_runs').delete().match({product_id:p.id});
-      await sb.from('product_runs').insert({product_id:p.id, run_id:dst.id});
-      ok++;
+      await sb.from('product_runs').insert({product_id:p.id, run_id:dst.id}); ok++;
     }
   }
   alert(`${mode==='clone'?'已複製':'已移動'} ${ok}/${ids.length} 筆到「${dst.title}」`);
@@ -605,8 +606,7 @@ document.getElementById('btnBulkRun').onclick=async()=>{
       const payload={ name:p.name, price:p.price, category:p.category, product_id:newPid, status:p.status, arrival_time:p.arrival_time, eta_text: dst.title||null, note:p.note, img_url:p.img_url, tags:p.tags, cost_jpy:p.cost_jpy, cost_nt:p.cost_nt };
       const ins=await tolerantWrite('products',payload,'insert');
       if(!ins.error && ins.data?.[0]?.id){
-        await sb.from('product_runs').insert({product_id:ins.data[0].id, run_id:dst.id});
-        ok++;
+        await sb.from('product_runs').insert({product_id:ins.data[0].id, run_id:dst.id}); ok++;
       }
     }
     alert(`已複製 ${ok}/${list.length} 筆到「${dst.title}」`);
