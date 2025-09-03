@@ -110,7 +110,7 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
 
   <!-- RUNS -->
   <section id="tab-runs" style="display:none">
-    <div class="panel">
+    <div class="panel" id="runForm">
       <h3 style="margin:0 0 8px">新增 / 編輯 連線</h3>
       <div class="row">
         <div><label>標題 title</label><input id="rTitle" placeholder="例：9/26 東京 或 JP 共用池"/></div>
@@ -164,7 +164,7 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
           <select id="poolTarget"><option value="">— 選擇目標連線 —</option></select>
         </div>
       </div>
-      <div class="small muted">說明：這裡是「複製」對應，會新增 <code>product_runs</code> 到目標連線；Pool 仍會保留，不會被移除。</div>
+      <div class="small muted">說明：這裡是「複製」對應，會新增 <code>product_runs</code> 到目標連線；Pool 仍會保留，不會被移除。複製後會同步該商品到貨（<code>arrival_time</code>）＝目標連線「寄送開始（ship_start_date）」；<code>eta_text</code> ＝目標連線標題。</div>
     </div>
 
     <div class="panel">
@@ -381,7 +381,10 @@ window.editRun=async(id)=>{
   rStart.value=r.start_date||''; rEnd.value=r.end_date||''; rShip.value=r.ship_start_date||'';
   rNote.value=r.note||''; rActive.value=String(!!r.is_active); rFeatured.value=String(!!r.is_featured);
   rIsPool.value=String(!!r.is_pool);
-  rTitle.dataset.editId=id; // 用這個判斷是編輯
+
+  // 將 editId 綁在整個表單容器，避免被清空
+  document.getElementById('runForm').dataset.editId=id;
+  btnRunCreate.textContent='儲存變更';
 };
 window.deleteRun=async(id)=>{
   if(!confirm('確定刪除此連線？（會連同對應關聯移除）')) return;
@@ -403,18 +406,25 @@ btnRunCreate.onclick=async()=>{
     is_pool:(rIsPool.value==='true'),
   };
   if(!payload.title){ alert('請輸入標題'); return; }
-  const editId=rTitle.dataset.editId||null;
+  const form = document.getElementById('runForm');
+  const editId=form.dataset.editId||null;
+
   if(editId){
     const { error }=await sb.from('runs').update(payload).eq('id',editId);
     if(error){ alert('更新失敗：'+error.message); return; }
-    delete rTitle.dataset.editId;
+    delete form.dataset.editId;
   }else{
     const { error }=await sb.from('runs').insert(payload);
     if(error){ alert('新增失敗：'+error.message); return; }
   }
   btnRunReset.click(); await loadRuns(); alert('已儲存');
 };
-btnRunReset.onclick=()=>{ [rTitle,rCode,rRegion,rStart,rEnd,rShip,rNote].forEach(i=>i.value=''); rActive.value='true'; rFeatured.value='false'; rIsPool.value='false'; delete rTitle.dataset.editId; };
+btnRunReset.onclick=()=>{
+  [rTitle,rCode,rRegion,rStart,rEnd,rShip,rNote].forEach(i=>i.value='');
+  rActive.value='true'; rFeatured.value='false'; rIsPool.value='false';
+  delete document.getElementById('runForm').dataset.editId;
+  btnRunCreate.textContent='新增連線';
+};
 
 // === Category datalist
 async function fillCategoryDatalist(){
@@ -594,7 +604,6 @@ async function loadPoolProducts(){
   const poolId=poolSelect.value||null;
   const box=document.getElementById('poolList'); box.innerHTML='';
   if(!poolId) return;
-  // 找出在 pool 的商品（以 product_runs 連到該 pool）
   const { data:pr }=await sb.from('product_runs').select('product_id').eq('run_id',poolId);
   const ids=(pr||[]).map(x=>x.product_id);
   if(!ids.length){ box.innerHTML='<div class="muted">此 Pool 目前沒有商品</div>'; return; }
@@ -623,44 +632,60 @@ poolCopy.onclick=async()=>{
   if(!poolId||!targetId){ alert('請選 Pool 與目標連線'); return; }
   const ids=[...document.querySelectorAll('.poolItemChk:checked')].map(c=>c.value);
   if(!ids.length){ alert('請先勾選要複製的商品'); return; }
+
+  // 1) 建立關聯
   const rows=ids.map(pid=>({product_id:pid, run_id:targetId}));
   const { error }=await sb.from('product_runs').upsert(rows,{onConflict:'product_id,run_id'});
   if(error){ alert('複製失敗：'+error.message); return; }
-  alert(`已複製 ${ids.length} 件到目標連線`);
+
+  // 2) 同步到貨與 eta_text
+  const { data:targetRun }=await sb.from('runs').select('title,ship_start_date').eq('id',targetId).maybeSingle();
+  if(targetRun){
+    const patch={ eta_text: targetRun.title || null };
+    if(targetRun.ship_start_date) patch.arrival_time = targetRun.ship_start_date;
+    await sb.from('products').update(patch).in('id', ids);
+  }
+
+  alert(`已複製 ${ids.length} 件到目標連線，並同步到貨／eta_text`);
 };
 
-// === Bulk（同 Pool 概念：複製）
+// === Bulk（同 Pool 概念：複製＋同步）
 let bulkPreviewCount=0;
 bulkPreview.onclick=async()=>{
   const from=bulkFrom.value||''; const to=bulkTo.value||''; const scope=bulkScope.value;
   if(!from||!to){ alert('請選來源與目標'); return; }
   let ids=[];
-  if(scope==='linked'){
-    const { data:pr }=await sb.from('product_runs').select('product_id').eq('run_id',from);
-    ids=(pr||[]).map(x=>x.product_id);
-  }else{
-    // 「全部商品」這裡簡化：取來源 run 的關聯商品（一般實務上還是從 product_runs 取得）
-    const { data:pr }=await sb.from('product_runs').select('product_id').eq('run_id',from);
-    ids=(pr||[]).map(x=>x.product_id);
-  }
+  const { data:pr }=await sb.from('product_runs').select('product_id').eq('run_id',from);
+  ids=(pr||[]).map(x=>x.product_id);
   bulkPreviewCount=ids.length;
   bulkInfo.textContent=`預計複製 ${bulkPreviewCount} 件。`;
 };
 bulkDo.onclick=async()=>{
-  const to=bulkTo.value||''; if(!bulkPreviewCount||!to){ alert('請先預覽'); return; }
-  const from=bulkFrom.value||''; const { data:pr }=await sb.from('product_runs').select('product_id').eq('run_id',from);
+  const from=bulkFrom.value||''; const to=bulkTo.value||'';
+  if(!from||!to){ alert('請先選來源與目標'); return; }
+  const { data:pr }=await sb.from('product_runs').select('product_id').eq('run_id',from);
   const ids=(pr||[]).map(x=>x.product_id);
   const rows=ids.map(pid=>({product_id:pid, run_id:to}));
   const { error }=await sb.from('product_runs').upsert(rows,{onConflict:'product_id,run_id'});
   if(error){ alert('執行失敗：'+error.message); return; }
-  alert(`已複製 ${ids.length} 件到目標連線`); bulkInfo.textContent='';
+
+  // 同步到貨與 eta_text
+  const { data:targetRun }=await sb.from('runs').select('title,ship_start_date').eq('id',to).maybeSingle();
+  if(targetRun){
+    const patch={ eta_text: targetRun.title || null };
+    if(targetRun.ship_start_date) patch.arrival_time = targetRun.ship_start_date;
+    await sb.from('products').update(patch).in('id', ids);
+  }
+
+  alert(`已複製 ${ids.length} 件到目標連線，並同步到貨／eta_text`);
+  bulkInfo.textContent='';
 };
 
 // === init
 document.querySelectorAll('.tabbtn').forEach((b,i)=>{ if(i===0) b.click(); });
 (async function init(){
   await loadRates(); await loadRuns(); await fillCategoryDatalist(); await loadProducts();
-  poolCTA.innerHTML='提示：共用池請在「Runs」建立（勾選 <strong>Pool</strong>）。之後到「Pool 派送」選 Pool → 多選商品 → 複製到目標連線。';
+  poolCTA.innerHTML='提示：共用池請在「Runs」建立（勾選 <strong>Pool</strong>）。之後到「Pool 派送」選 Pool → 多選商品 → 複製到目標連線（會同步到貨日期與 eta）。';
 })();
 </script>
 </body>
