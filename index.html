@@ -5,65 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>旅游人生選物代購｜Select Shop</title>
 <style>
-  :root{
-    --bg:#f7f3ef;--paper:#fffdf9;--card:#fff;--ink:#2b2b2b;--muted:#7a7267;
-    --brand:#8B5E34;--brand-2:#C2A27A;--accent:#7F8C5B;--border:#eadfcd;
-    --shadow:0 12px 30px rgba(139,94,52,.08);--radius:16px;--maxw:1100px;
-    --gap:16px;--thumb-h:170px
-  }
+  :root{--bg:#f7f3ef;--paper:#fffdf9;--card:#fff;--ink:#2b2b2b;--muted:#7a7267;--brand:#8B5E34;--brand-2:#C2A27A;--accent:#7F8C5B;--border:#eadfcd;--shadow:0 12px 30px rgba(139,94,52,.08);--radius:16px;--maxw:1100px;--gap:16px;--thumb-h:170px}
   *{box-sizing:border-box}
   body{margin:0;background:linear-gradient(180deg,#f8f5f1 0%, var(--bg) 100%);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",Arial}
   a{color:var(--brand)} img{display:block;max-width:100%}
-
-  /* Topbar */
   .topbar{position:sticky;top:0;z-index:50;background:rgba(247,243,239,.75);backdrop-filter:blur(6px);border-bottom:1px solid var(--border)}
   .wrap{max-width:var(--maxw);margin:0 auto;padding:14px 18px}
-  .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
   .brand{display:flex;align-items:center;gap:12px}
   .brand img{width:42px;height:42px;object-fit:contain}
   .title{font-weight:800}.subtitle{font-weight:700;color:var(--brand)}
-
-  /* 橫向工具列：桌機一排，手機自動換行 */
-  #toolbar{
-    flex:1;
-    display:grid;
-    grid-template-columns: 1fr 180px 180px 200px 120px; /* 搜尋、連線、分類、排序、許願 */
-    gap:10px;
-    align-items:center;
-    margin-left:12px;
-  }
+  #toolbar{display:flex;gap:10px;align-items:center}
   #toolbar input,#toolbar select{padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fffdfa}
-  #wishBtn{border:1px solid var(--brand);color:#fff;background:var(--brand);border-radius:12px;padding:12px 16px;cursor:pointer;white-space:nowrap}
-
-  @media (max-width:960px){
-    .row{align-items:stretch}
-    #toolbar{
-      grid-template-columns:1fr 1fr;  /* 兩欄自動換行 */
-      grid-auto-rows:auto;
-      margin-left:0;
-    }
-    #wishBtn{width:100%}
-  }
-
   .container{max-width:var(--maxw);margin:18px auto;padding:0 18px}
   .notice{background:#fffdfa;border:1px dashed var(--border);border-radius:14px;padding:10px 12px}
   .runs{display:flex;gap:12px;overflow:auto;padding-bottom:4px;margin-top:12px}
   .runCard{min-width:230px;background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:12px;cursor:pointer}
   .runCard .muted{color:var(--muted);font-size:12px}
-
   #productList{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:var(--gap);margin-top:12px}
   .card{border:1px solid var(--border);border-radius:var(--radius);background:var(--card);overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:.08s}
   .card:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(139,94,52,.12)}
   .thumb{height:var(--thumb-h);background:#f2eee7;display:flex;align-items:center;justify-content:center}
-  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb img{width:100%;height:100%;object-fit:contain}
   .pad{padding:12px 14px}
   .name{font-size:14px;line-height:1.35;margin:0 0 6px}
   .price{color:#b03c2f;font-weight:800}
   .cat{margin-top:4px;font-size:12px;color:var(--muted)}
   #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted)}
   #emptyTip{color:var(--muted);text-align:center}
-
-  /* Modal（商品詳情） */
+  .btn{border:none;border-radius:12px;padding:12px 16px;font-size:14px;cursor:pointer;box-shadow:var(--shadow)}
+  .btn.ask{background:var(--brand);color:#fff}
+  .btn.ghost{background:#fff;border:1px solid var(--border)}
+  /* Modal */
   .modal{display:none;position:fixed;inset:0;z-index:1000}
   .overlay{position:absolute;inset:0;background:rgba(0,0,0,.45)}
   .panel{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(980px,92vw);max-height:88vh;overflow:auto;background:var(--paper);border:1px solid var(--border);border-radius:22px;box-shadow:var(--shadow);display:grid;grid-template-columns:1fr 1fr;gap:22px;padding:20px}
@@ -77,17 +50,12 @@
   .navBtns{display:flex;justify-content:space-between;margin-top:6px}
   .navBtns button{border:1px solid var(--border);background:#fff;border-radius:10px;padding:6px 10px;cursor:pointer}
   .btnrow{display:flex;gap:10px;margin-top:12px}
-  .btn{border:none;border-radius:12px;padding:12px 16px;font-size:14px;cursor:pointer;box-shadow:var(--shadow)}
-  .btn.copy{background:#f4efe7}.btn.ask{background:var(--brand);color:#fff}
-
-  /* 許願表單（沿用你現有結構） */
-  .wishRow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  @media (max-width:860px){.wishRow{grid-template-columns:1fr}}
-  label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
-  input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fffdfa}
-  textarea{min-height:80px}
-  .uploader{border:1px dashed var(--border);border-radius:10px;padding:10px;background:#fff}
-  .muted{color:var(--muted)}
+  /* 許願 modal */
+  .modal-sm .panel{width:min(620px,92vw);grid-template-columns:1fr}
+  .field{display:grid;gap:6px;margin-bottom:10px}
+  .field label{font-size:12px;color:var(--muted)}
+  .field input,.field select,.field textarea{padding:11px 12px;border:1px solid var(--border);border-radius:12px;background:#fffdfa}
+  .help{font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -96,13 +64,8 @@
       <div class="row">
         <div class="brand">
           <img src="LOGO.png" alt="logo" />
-          <div>
-            <div class="title" style="font-size:22px;">旅游人生選物代購</div>
-            <div class="subtitle">Select Shop</div>
-          </div>
+          <div><div class="title" style="font-size:22px;">旅游人生選物代購</div><div class="subtitle">Select Shop</div></div>
         </div>
-
-        <!-- 橫向工具列 -->
         <div id="toolbar">
           <input type="text" id="searchInput" placeholder="搜尋商品…" />
           <select id="runFilter"><option value="">全部連線</option></select>
@@ -113,7 +76,7 @@
             <option value="priceAsc">價格：低到高</option>
             <option value="priceDesc">價格：高到低</option>
           </select>
-          <button id="wishBtn">我要許願</button>
+          <button class="btn ask" id="btnWishOpen">我要許願</button>
         </div>
       </div>
     </div>
@@ -132,7 +95,7 @@
     <p id="emptyTip" class="muted" style="display:none;margin-top:12px">目前沒有商品</p>
   </div>
 
-  <!-- 詳情 -->
+  <!-- 詳情 Modal（保持你原本） -->
   <div id="detailModal" class="modal">
     <div class="overlay"></div>
     <div class="panel">
@@ -148,81 +111,74 @@
         <h2 id="dName" style="margin:0 0 6px"></h2>
         <div class="muted" id="dId"></div>
         <div style="margin:10px 0 4px"><span class="price" id="dPrice"></span></div>
-        <div class="muted" id="dMeta"></div>
-        <div class="muted" id="dEta" style="margin-top:6px"></div>
-        <div id="dDesc" style="margin-top:6px"></div>
+        <div id="dMeta" class="muted"></div>
+        <div id="dEta" class="muted" style="margin-top:6px"></div>
         <div id="dNote" style="margin-top:6px"></div>
         <div id="dTags" style="margin:10px 0"></div>
         <div class="btnrow">
-          <button class="btn copy" id="btnCopy">複製下單格式</button>
           <button class="btn ask" id="btnAsk">詢問／下單</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 連結選單 -->
-  <div id="linksModal" class="modal modal-sm">
+  <!-- 許願 Modal -->
+  <div id="wishModal" class="modal modal-sm">
     <div class="overlay"></div>
     <div class="panel">
       <div>
-        <h3 style="margin:0 0 12px">選擇聯絡方式</h3>
-        <p class="muted" style="margin:0 0 12px">下單系統尚在建置，請先用以下任一方式與我聯繫：</p>
-        <div class="linkBox" style="display:flex;gap:12px;flex-direction:column">
-          <a class="linkBtn" target="_blank" href="https://line.me/R/ti/p/@958xfkot" style="display:flex;justify-content:space-between;align-items:center;text-decoration:none;padding:14px 16px;border-radius:14px;border:1px solid var(--border);background:#fff;color:var(--ink);box-shadow:var(--shadow)"><div class="l" style="display:flex;align-items:center;gap:10px"><span class="dot green" style="width:10px;height:10px;border-radius:999px;background:#00B900"></span><strong>官方 LINE</strong></div><span class="muted">點擊加入</span></a>
-          <a class="linkBtn" target="_blank" href="https://line.me/ti/g2/fRmTHOkmCy8ite62TzDencHTqlruXj6um0DT7g" style="display:flex;justify-content:space-between;align-items:center;text-decoration:none;padding:14px 16px;border-radius:14px;border:1px solid var(--border);background:#fff;color:var(--ink);box-shadow:var(--shadow)"><div class="l" style="display:flex;align-items:center;gap:10px"><span class="dot blue" style="width:10px;height:10px;border-radius:999px;background:#4f7dbf"></span><strong>LINE 社群</strong></div><span class="muted">密碼：0628</span></a>
-        </div>
-        <div style="text-align:right;margin-top:14px"><button id="linksClose" class="btn" style="background:#fffaf2">關閉</button></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 許願 Modal（沿用你現有的元件與事件） -->
-  <div id="wishModal" class="modal modal-sm" style="display:none">
-    <div class="overlay"></div>
-    <div class="panel" style="width:min(680px,92vw);grid-template-columns:1fr">
-      <div>
         <h3 style="margin:0 0 12px">我要許願</h3>
-        <div class="wishRow">
-          <div><label>選擇連線</label><select id="wRun"><option value="">（選填）</option></select></div>
-          <div><label>選擇分類</label><input id="wCategory" list="categoryList" placeholder="選或輸入"/></div>
-          <div><label>商品名稱</label><input id="wName" /></div>
-          <div><label>商品網址</label><input id="wUrl" /></div>
-          <div style="grid-column:1 / -1"><label>許願內容（尺寸/顏色/數量…）</label><textarea id="wNote"></textarea></div>
+        <div class="field">
+          <label>選擇連線</label>
+          <select id="wRun"><option value="">請選擇</option></select>
+          <div class="help">會帶出「連線標題｜起訖日期」。</div>
         </div>
-        <div class="uploader" style="margin-top:8px">
-          <label class="small">商品圖片（選填，限 JPG/PNG/WebP，≤ 2MB）</label>
-          <input type="file" id="wImg" accept="image/jpeg,image/png,image/webp" />
+        <div class="field">
+          <label>選擇分類</label>
+          <select id="wCategory"><option value="">選或輸入</option></select>
         </div>
-        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
-          <button class="btn" id="wSubmit">送出許願</button>
-          <button class="btn" id="wClose" style="background:#fff;color:#2b2b2b;border:1px solid var(--border)">關閉</button>
+        <div class="field">
+          <label>商品名稱</label>
+          <input id="wName" placeholder="必填"/>
+        </div>
+        <div class="field">
+          <label>商品網址</label>
+          <input id="wUrl" placeholder="可貼購物連結"/>
+        </div>
+        <div class="field">
+          <label>許願內容（尺寸/顏色/數量…）</label>
+          <textarea id="wContent" rows="4" placeholder="想補充的需求"></textarea>
+        </div>
+        <div class="field">
+          <label>商品圖片（限 JPG/PNG/WebP ≤ 2MB）</label>
+          <input id="wImage" type="file" accept="image/jpeg,image/png,image/webp"/>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn ghost" id="wCancel">關閉</button>
+          <button class="btn ask" id="wSend">送出許願</button>
         </div>
       </div>
     </div>
   </div>
-
-  <datalist id="categoryList"></datalist>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const supabaseUrl='https://llbpmqyjigovxixeohzr.supabase.co';
     const supabaseKey='sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';
     const BUCKET='yuyu.f86';
-    const supabaseClient=supabase.createClient(supabaseUrl,supabaseKey);
+    const sb=supabase.createClient(supabaseUrl,supabaseKey);
 
     let productsData=[], runs=[], productRuns=[], OPTIONS={categories:[]};
 
-    // 工具
     function publicUrlFromPath(path){
       if(!path) return '';
-      const { data }=supabaseClient.storage.from(BUCKET).getPublicUrl(path);
+      const { data }=sb.storage.from(BUCKET).getPublicUrl(path);
       return data?.publicUrl||'';
     }
-    function urlFor(p){ if(!p) return ''; return /^https?:\/\//i.test(p)? p : publicUrlFromPath(p); }
     function fmt(n){ if(n==null) return ''; return 'NT$'+Number(n||0).toLocaleString('zh-TW'); }
     function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
     function byNew(a,b){ if(a.created_at&&b.created_at) return new Date(b.created_at)-new Date(a.created_at); if(a.id&&b.id) return b.id-a.id; return 0; }
+
     function ensureArrayImages(p){
       if(Array.isArray(p.images)) return p.images;
       if(typeof p.images==='string' && p.images.trim()){
@@ -231,10 +187,14 @@
       return [];
     }
 
-    // 卡片與列表（只顯示有被指派到「非 Pool」連線的商品）
+    function runLabel(r){
+      const dates = [r.start_date, r.end_date].filter(Boolean).join(' ~ ');
+      return [r.title||r.code||r.region, dates].filter(Boolean).join('｜');
+    }
+
     function cardHTML(p){
       const imgs=ensureArrayImages(p);
-      const first = urlFor(p.img_url) || (imgs[0]? urlFor(imgs[0]) : '');
+      const first = p.img_url || (imgs[0]? publicUrlFromPath(imgs[0]) : '');
       return `<div class="card" data-id="${p.id}">
         <div class="thumb">${first?`<img src="${first}" alt="${escapeHtml(p.name||'')}" loading="lazy">`:''}</div>
         <div class="pad">
@@ -250,13 +210,12 @@
       empty.style.display='none'; box.innerHTML=list.map(cardHTML).join('');
     }
 
-    // 首頁 featured 連線卡片（只顯示非池 is_pool=false）
     function renderHomeRuns(){
       const wrap=document.getElementById('homeRuns'); wrap.innerHTML='';
       runs.filter(r=>r.is_featured).forEach(r=>{
         const el=document.createElement('div'); el.className='runCard';
         el.innerHTML=`<div><strong>${escapeHtml(r.title||r.code||r.region)}</strong></div>
-          <div class="muted">${r.start_date||''} ~ ${r.end_date||''}</div>
+          <div class="muted">${[r.start_date||'', r.end_date||''].filter(Boolean).join(' ~ ')}</div>
           ${r.ship_start_date?`<div class="muted">寄送：${r.ship_start_date}</div>`:''}
           ${r.note?`<div style="margin-top:6px">${escapeHtml(r.note)}</div>`:''}`;
         el.onclick=()=>{
@@ -268,7 +227,6 @@
       });
     }
 
-    // 篩選
     function applyFilters(){
       const kw=(document.getElementById('searchInput').value||'').toLowerCase();
       const cat=document.getElementById('categoryFilter').value;
@@ -293,23 +251,21 @@
       renderList(list);
     }
 
-    // 詳情 modal（多圖）
+    // 詳情 modal
     const detailModal=document.getElementById('detailModal');
     detailModal.querySelector('.overlay').addEventListener('click',()=> detailModal.style.display='none');
-
     let curImgs=[], curIdx=0;
     function setBig(i){
       if(!curImgs.length) return;
       curIdx=(i+curImgs.length)%curImgs.length;
-      const url = curImgs[curIdx];
-      document.getElementById('dImg').src=url;
+      document.getElementById('dImg').src=curImgs[curIdx];
       document.querySelectorAll('#thumbs img').forEach((im,idx)=> im.classList.toggle('active', idx===curIdx));
     }
     function openDetail(id){
       const p=productsData.find(x=>String(x.id)===String(id));
       if(!p) return;
-      const imgs=ensureArrayImages(p).map(urlFor);
-      const first = urlFor(p.img_url) || (imgs[0]||'');
+      const imgs=ensureArrayImages(p).map(publicUrlFromPath);
+      const first = p.img_url || (imgs[0]||'');
       curImgs = [first, ...imgs.filter(u=>u && u!==first)].filter(Boolean);
       curIdx=0;
 
@@ -321,11 +277,10 @@
       const meta=[
         p.category?`分類：${p.category}`:'',
         p.status?`狀態：${p.status}`:'',
-        p.arrival_time?`開始寄送日期（預計三天內出貨）：${p.arrival_time}`:''
+        p.arrival_time?`開始寄送日：${p.arrival_time}（預計三天內出貨）`:''
       ].filter(Boolean).join('　');
       document.getElementById('dMeta').textContent=meta;
       document.getElementById('dEta').textContent=p.eta_text||'';
-      document.getElementById('dDesc').textContent=p.description?`描述：${p.description}`:'';
       document.getElementById('dNote').textContent=p.note||'';
 
       const tagsBox=document.getElementById('dTags'); tagsBox.innerHTML='';
@@ -344,8 +299,7 @@
       document.getElementById('btnPrev').onclick=()=> setBig(curIdx-1);
       document.getElementById('btnNext').onclick=()=> setBig(curIdx+1);
 
-      document.getElementById('btnCopy').onclick=()=>navigator.clipboard.writeText(`我要下單：${p.name||''} 1件`).then(()=>alert('已複製下單格式'));
-      document.getElementById('btnAsk').onclick=()=> openLinks();
+      document.getElementById('btnAsk').onclick=()=> window.open('https://line.me/R/ti/p/@958xfkot','_blank');
       detailModal.style.display='block';
     }
     document.getElementById('productList').addEventListener('click', e=>{
@@ -353,44 +307,30 @@
       if(el) openDetail(el.getAttribute('data-id'));
     });
 
-    // 連結 modal
-    const linksModal=document.getElementById('linksModal');
-    linksModal.querySelector('.overlay').addEventListener('click',()=> linksModal.style.display='none');
-    document.getElementById('linksClose').addEventListener('click',()=> linksModal.style.display='none');
-    function openLinks(){ linksModal.style.display='block'; }
-
-    // 許願 modal open/close（沿用）
-    const wishModal=document.getElementById('wishModal');
-    document.getElementById('wishBtn').addEventListener('click',()=> wishModal.style.display='block');
-    wishModal.querySelector('.overlay').addEventListener('click',()=> wishModal.style.display='none');
-    document.getElementById('wClose').addEventListener('click',()=> wishModal.style.display='none');
-
-    // Supabase 資料讀取
+    // Supabase 讀取
     async function fetchRuns(){
-      // 只取啟用 & 非共用池，避免前台看到共用池
-      const { data }=await supabaseClient
-        .from('runs')
-        .select('id,code,title,region,start_date,end_date,note,ship_start_date,is_active,is_featured,is_pool')
+      // 只取啟用 & 非共用池
+      const { data }=await sb.from('runs')
+        .select('id,code,title,region,start_date,end_date,ship_start_date,note,is_active,is_featured,is_pool')
         .eq('is_active',true)
         .eq('is_pool',false)
         .order('start_date',{ascending:false});
       return data||[];
     }
     async function fetchProductRuns(runIds){
-      let q=supabaseClient.from('product_runs').select('product_id,run_id');
+      let q=sb.from('product_runs').select('product_id,run_id');
       if(runIds?.length) q=q.in('run_id',runIds);
       const { data }=await q;
       return data||[];
     }
     async function fetchProducts(){
-      const { data }=await supabaseClient
-        .from('products')
-        .select('id,product_id,name,price,category,status,arrival_time,eta_text,tags,images,img_url,created_at,note,description');
+      const { data }=await sb.from('products')
+        .select('id,product_id,name,price,category,status,arrival_time,eta_text,tags,images,img_url,created_at,note');
       return data||[];
     }
     async function loadOptions(){
       try{
-        const { data, error }=await supabaseClient.storage.from(BUCKET).download('admin/options.json');
+        const { data, error }=await sb.storage.from(BUCKET).download('admin/options.json');
         if(!error&&data){ const json=JSON.parse(await data.text()); if(Array.isArray(json.categories)) OPTIONS.categories=json.categories; }
       }catch(_){}
     }
@@ -401,27 +341,22 @@
       const fromProducts=[...new Set(productsData.filter(p=>p.category).map(p=>p.category))];
       const all=[...new Set([...fromOptions,...fromProducts])].filter(Boolean).sort((a,b)=>a.localeCompare(b,'zh-Hant'));
       all.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+      // 許願用下拉
+      const wSel=document.getElementById('wCategory'); wSel.innerHTML='<option value="">選或輸入</option>';
+      all.forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; wSel.appendChild(o); });
     }
     function fillRuns(){
       const sel=document.getElementById('runFilter');
       sel.innerHTML='<option value="">全部連線</option>';
+      const wSel=document.getElementById('wRun'); wSel.innerHTML='<option value="">請選擇</option>';
       runs.forEach(r=>{
-        const opt=document.createElement('option');
-        opt.value=r.id; opt.textContent=r.title||r.code||r.region;
+        const opt=document.createElement('option'); opt.value=r.id; opt.textContent=runLabel(r);
         sel.appendChild(opt);
-      });
-
-      // 許願選單用
-      const wSel=document.getElementById('wRun');
-      wSel.innerHTML='<option value="">（選填）</option>';
-      runs.forEach(r=>{
-        const o=document.createElement('option');
-        o.value=r.id; o.textContent=r.title||r.code||r.region;
-        wSel.appendChild(o);
+        const opt2=opt.cloneNode(true); wSel.appendChild(opt2);
       });
     }
     async function loadHomeNotice(){
-      const { data }=await supabaseClient.from('site_meta').select('value').eq('key','home_notice').maybeSingle();
+      const { data }=await sb.from('site_meta').select('value').eq('key','home_notice').maybeSingle();
       document.getElementById('homeNotice').textContent=data?.value||'';
       document.getElementById('home').style.display='block';
     }
@@ -445,6 +380,53 @@
     document.getElementById('categoryFilter').addEventListener('change',applyFilters);
     document.getElementById('sortSelect').addEventListener('change',applyFilters);
     document.getElementById('runFilter').addEventListener('change',applyFilters);
+
+    // 許願 modal 控制
+    const wishModal=document.getElementById('wishModal');
+    wishModal.querySelector('.overlay').addEventListener('click',()=> wishModal.style.display='none');
+    document.getElementById('btnWishOpen').onclick=()=> (wishModal.style.display='block');
+    document.getElementById('wCancel').onclick=()=> (wishModal.style.display='none');
+
+    // 上傳 + 寫入 wishes
+    async function uploadWishImage(file){
+      if(!file) return null;
+      if(!['image/jpeg','image/png','image/webp'].includes(file.type)){ alert('只允許 JPG/PNG/WebP'); return null; }
+      if(file.size>2*1024*1024){ alert('檔案需 ≤ 2MB'); return null; }
+      const name=`${Date.now()}_${file.name}`.replace(/\s+/g,'_');
+      const path=`wishes/${name}`;
+      const { error }=await sb.storage.from(BUCKET).upload(path, file, { upsert:false, cacheControl:'3600' });
+      if(error){ alert('上傳失敗：'+error.message); return null; }
+      return path;
+    }
+
+    document.getElementById('wSend').onclick=async()=>{
+      const runId=document.getElementById('wRun').value||null;
+      const cat=document.getElementById('wCategory').value||null;
+      const name=(document.getElementById('wName').value||'').trim();
+      const url=(document.getElementById('wUrl').value||'').trim()||null;
+      const content=(document.getElementById('wContent').value||'').trim()||null;
+      const file=document.getElementById('wImage').files?.[0]||null;
+      if(!name){ alert('請填寫商品名稱'); return; }
+      let imagePath=null;
+      if(file){ imagePath=await uploadWishImage(file); if(imagePath===null) return; }
+
+      // 找 run title 快取
+      const r=runs.find(x=>x.id===runId);
+      const payload={
+        run_id: runId,
+        run_title_cache: r? runLabel(r): null,
+        category: cat||null,
+        name, url, content, image_path: imagePath, status:'new'
+      };
+      const { error }=await sb.from('wishes').insert(payload);
+      if(error){ alert('送出失敗：'+error.message); return; }
+      alert('已送出許願，感謝！'); wishModal.style.display='none';
+      // 清空
+      ['wName','wUrl','wContent'].forEach(id=>document.getElementById(id).value='');
+      document.getElementById('wCategory').value='';
+      document.getElementById('wRun').value='';
+      document.getElementById('wImage').value='';
+    };
 
     // 啟動
     enterShop();
