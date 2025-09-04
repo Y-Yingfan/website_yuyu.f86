@@ -232,6 +232,23 @@ hr.sep{border:none;border-top:1px dashed var(--border);margin:10px 0}
   <!-- SETTINGS -->
   <section id="tab-settings" style="display:none">
     <div class="panel">
+      <div class="panel">
+  <h3 style="margin:0 0 10px">首頁「最近連線」/ 公告</h3>
+  <div class="small muted">顯示於前台首頁頂部（index 的提醒條）。</div>
+  <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
+    <span class="muted" style="display:inline-flex;align-items:center;gap:6px">
+      <span style="font-size:18px">🛫</span> 最近連線：9/6~9 日本北海道
+    </span>
+  </div>
+
+  <textarea id="homeNotice" style="width:100%;min-height:64px;border:1px solid var(--border);border-radius:10px;padding:10px;background:#fffaf2"></textarea>
+  <div style="display:flex;gap:10px;margin-top:10px;align-items:center">
+    <button class="btn" id="btnSaveNotice">儲存公告</button>
+    <button class="btn ghost" id="btnClearNotice">清空</button>
+    <span class="small muted">儲存在 <code>site_meta</code> 的 <code>home_notice</code>，前台已自動讀取顯示。</span>
+  </div>
+</div>
+
       <h3 style="margin:0 0 10px">匯率設定</h3>
       <div class="row">
         <div><label>JPY → TWD</label><input id="rateJPY" type="number" step="0.0001" /></div>
@@ -327,7 +344,31 @@ btnSaveRates.onclick=async()=>{
   for(const r of rows){ await sb.from('site_meta').upsert(r,{onConflict:'key'}); }
   await loadRates(); alert('已儲存匯率');
 };
+  
+// --- Home Notice (Settings) ---
+async function loadHomeNotice() {
+  const { data, error } = await sb
+    .from('site_meta')
+    .select('value')
+    .eq('key', 'home_notice')
+    .maybeSingle();
+  if (!error && data) homeNotice.value = data.value || '';
+}
 
+btnSaveNotice.onclick = async () => {
+  const val = (homeNotice.value || '').trim();
+  await sb.from('site_meta').upsert({ key: 'home_notice', value: val }, { onConflict: 'key' });
+  alert('已儲存首頁公告');
+};
+
+btnClearNotice.onclick = async () => {
+  if (!confirm('要清空首頁公告嗎？')) return;
+  await sb.from('site_meta').delete().eq('key', 'home_notice');
+  homeNotice.value = '';
+  alert('已清空');
+};
+
+  
 /* 成本自算（新增/編輯） */
 ['pCostCurrency','pCostForeign'].forEach(id=>{
   document.getElementById(id).addEventListener('input',()=>{
@@ -749,8 +790,9 @@ window.openReply=async(id)=>{
 /* ==== init ==== */
 document.querySelectorAll('.tabbtn').forEach((b,i)=>{ if(i===0) b.click(); });
 (async function init(){
-  await loadRates(); await loadRuns(); await fillCategoryDatalist(); await loadProducts(); await loadWishes();
+  await loadRates(); await loadRuns(); await fillCategoryDatalist(); await loadProducts(); await loadWishes();await loadHomeNotice();
 })();
 </script>
 </body>
 </html>
+
