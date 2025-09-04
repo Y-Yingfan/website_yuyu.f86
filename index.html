@@ -11,22 +11,31 @@
   --brand:#8B5E34;--border:#eadfcd;--shadow:0 10px 24px rgba(139,94,52,.08);
   --radius:14px;--maxw:1100px
 }
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#f8f5f1, #f7f3ef);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",Arial}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#f8f5f1, #f7f3ef);color:var(--ink);
+     font-family:ui-sans-serif,system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",Arial}
 .wrap{max-width:var(--maxw);margin:12px auto;padding:0 14px}
 .top{display:flex;align-items:center;gap:12px}
 .top img.logo{height:32px;width:auto}
 .top h1{font-size:18px;font-weight:800;margin:0}
 .top small{display:block;color:#7a7267;margin-top:-2px}
+
+/* 工具列（橫排） */
 .toolbar{display:flex;gap:10px;align-items:center;margin:10px 0 14px}
-.toolbar .grow{flex:1}
+#q{width:260px}                 /* 只縮小搜尋框，其餘照舊 */
+.toolbar select{min-width:160px}
+.toolbar .spacer{flex:1}        /* 把「我要許願」推到最右側 */
+
 input,select,button,textarea{border:1px solid var(--border);border-radius:999px;padding:9px 12px;background:#fff}
 select{padding-right:28px}
 button{background:var(--brand);color:#fff;cursor:pointer}
 .btn-ghost{background:#fff;color:#2b2b2b}
+
 .notice{border:1px dashed var(--border);background:#fff;width:100%;padding:10px;border-radius:12px;color:#584c3f}
 .section-title{font-weight:800;margin:14px 0 8px}
 .runs{display:flex;gap:10px;flex-wrap:wrap}
 .run{background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:10px;min-width:240px}
+
 .grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(260px,1fr));gap:12px}
 .card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
 .card .thumb{height:220px;background:#f5efe7;display:flex;align-items:center;justify-content:center}
@@ -35,10 +44,13 @@ button{background:var(--brand);color:#fff;cursor:pointer}
 .price{color:#b24e00;font-weight:800}
 .badge{display:inline-block;border:1px solid var(--border);border-radius:999px;padding:2px 8px;font-size:12px;background:#fff}
 .fw{font-weight:700}
-.rightDock{position:fixed;top:10px;right:10px;z-index:5}
+
+/* 許願 Modal */
 .modal{display:none;position:fixed;inset:0;z-index:50}
 .modal .overlay{position:absolute;inset:0;background:#0008}
-.modal .sheet{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(920px,92vw);max-height:90vh;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:16px}
+.modal .sheet{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(920px,92vw);max-height:90vh;overflow:auto;background:#fff;border:1px solid var(--border);
+  border-radius:18px;box-shadow:var(--shadow);padding:16px}
 .modal h3{margin:0 0 10px}
 .form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .form .full{grid-column:1 / -1}
@@ -59,15 +71,20 @@ button{background:var(--brand);color:#fff;cursor:pointer}
     </div>
   </div>
 
-  <!-- toolbar (橫排) -->
+  <!-- 工具列（橫排 + 右側「我要許願」） -->
   <div class="toolbar">
-    <input id="q" class="grow" placeholder="搜尋商品…"/>
+    <input id="q" placeholder="搜尋商品…"/>
     <select id="filterRun"><option value="">全部連線</option></select>
     <select id="filterCat"><option value="">全部分類</option></select>
-    <select id="sort"><option value="new">上架時間：新到舊</option><option value="old">上架時間：舊到新</option></select>
+    <select id="sort">
+      <option value="new">上架時間：新到舊</option>
+      <option value="old">上架時間：舊到新</option>
+    </select>
+    <div class="spacer"></div>
+    <button id="btnWish">我要許願</button>
   </div>
 
-  <!-- 公告 -->
+  <!-- 公告（首頁最近連線公告） -->
   <div class="notice" id="homeNotice" style="display:none"></div>
 
   <!-- 最近連線 -->
@@ -78,11 +95,6 @@ button{background:var(--brand);color:#fff;cursor:pointer}
   <div class="section-title">商品</div>
   <div class="grid" id="list"></div>
 
-</div>
-
-<!-- 右上「我要許願」 -->
-<div class="rightDock">
-  <button id="btnWish">我要許願</button>
 </div>
 
 <!-- 許願 Modal -->
@@ -110,7 +122,7 @@ button{background:var(--brand);color:#fff;cursor:pointer}
         <input id="wUrl" placeholder="可貼購物連結"/>
       </div>
       <div class="full">
-        <label class="helper">許願內容（尺寸/顏色/數量…）</label>
+        <label class="helper">許願內容（尺寸／顏色／數量…）</label>
         <textarea id="wContent" placeholder="想補充的需求"></textarea>
       </div>
       <div class="full">
@@ -138,6 +150,7 @@ const $=s=>document.querySelector(s);
 let runs=[], normalRuns=[], poolRuns=[];
 let allProducts=[], categories=[];
 
+/* 首頁「最近連線公告」 */
 async function loadNotice(){
   const {data}=await sb.from('site_meta').select('value').eq('key','home_notice').maybeSingle();
   if(data?.value){ $('#homeNotice').textContent=data.value; $('#homeNotice').style.display='block'; }
@@ -148,6 +161,7 @@ function runLabel(r){
   return `${r.title||r.region||'連線'}｜${d||''}`;
 }
 
+/* 連線（排除 Pool，並顯示在最近連線與許願下拉） */
 async function loadRuns(){
   const {data}=await sb.from('runs').select('*').order('created_at',{ascending:false});
   runs = data||[];
@@ -160,12 +174,12 @@ async function loadRuns(){
     const div=document.createElement('div'); div.className='run';
     div.innerHTML = `
       <div class="fw">${r.title||r.region||''}</div>
-      <div class="helper">2025-09-06 ~ 2025-09-09`.replace('2025-09-06 ~ 2025-09-09', `${r.start_date||''} ~ ${r.end_date||''}`)+`</div>
+      <div class="helper">${(r.start_date||'')} ~ ${(r.end_date||'')}</div>
       <div class="helper">寄送：${r.ship_start_date||''}</div>`;
     row.appendChild(div);
   });
 
-  // 下拉：全部連線
+  // 工具列：全部連線
   const f=$('#filterRun'); f.innerHTML='<option value="">全部連線</option>';
   normalRuns.forEach(r=> f.appendChild(new Option(runLabel(r), r.id)));
 
@@ -174,9 +188,11 @@ async function loadRuns(){
   normalRuns.forEach(r=> w.appendChild(new Option(runLabel(r), r.id)));
 }
 
+/* 分類（工具列：下拉；許願：datalist 可輸入） */
 async function loadCategories(){
   const {data}=await sb.from('products').select('category').not('category','is',null);
-  categories = [...new Set((data||[]).map(x=>x.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+  categories = [...new Set((data||[]).map(x=>x.category).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,'zh-Hant'));
   const f=$('#filterCat'), dl=$('#catList');
   f.innerHTML='<option value="">全部分類</option>';
   dl.innerHTML='';
@@ -186,21 +202,18 @@ async function loadCategories(){
   });
 }
 
+/* 商品清單：僅顯示「被分派到非 Pool 連線」的商品 */
 async function loadProducts(){
-  // 1) 取所有「非 Pool」連線的 product_runs
   const normalIds=normalRuns.map(r=>r.id);
   if(!normalIds.length){ $('#list').innerHTML=''; return; }
   const {data:links}=await sb.from('product_runs').select('product_id,run_id').in('run_id', normalIds);
   const ids=[...new Set((links||[]).map(x=>x.product_id))];
   if(ids.length===0){ $('#list').innerHTML=''; return; }
 
-  // 2) 拉商品
   const {data}=await sb.from('products')
     .select('id,name,price,category,product_id,eta_text,img_url,images,created_at')
     .in('id', ids).order('created_at', {ascending:false});
   allProducts = data||[];
-
-  // 3) 畫面
   renderList();
 }
 
@@ -212,19 +225,12 @@ function firstImage(p){
 
 function renderList(){
   const q = $('#q').value.trim().toLowerCase();
-  const rid = $('#filterRun').value || '';
   const cat = $('#filterCat').value || '';
   const sort = $('#sort').value;
 
   let arr = [...allProducts];
-
-  if(q) arr = arr.filter(p=> (p.name||'').toLowerCase().includes(q) || (p.product_id||'').toLowerCase().includes(q));
+  if(q)   arr = arr.filter(p=> (p.name||'').toLowerCase().includes(q) || (p.product_id||'').toLowerCase().includes(q));
   if(cat) arr = arr.filter(p=> (p.category||'')===cat);
-
-  if(rid){
-    // 只顯示被指到該連線的商品
-    arr = arr.filter(p=> true); // 由於已經只取非 Pool 的商品，這裡若要更精準，可多查一次 product_runs
-  }
 
   arr.sort((a,b)=> sort==='old'
     ? new Date(a.created_at)-new Date(b.created_at)
@@ -247,16 +253,16 @@ function renderList(){
 }
 
 $('#q').addEventListener('input', renderList);
-$('#filterRun').addEventListener('change', renderList);
 $('#filterCat').addEventListener('change', renderList);
 $('#sort').addEventListener('change', renderList);
 
-// 許願 Modal
+/* 許願 Modal：開關 */
 const wish=$('#wishModal');
 $('#btnWish').onclick=()=> wish.style.display='block';
 $('#wishModal .overlay').onclick=()=> wish.style.display='none';
 $('#wClose').onclick=()=> wish.style.display='none';
 
+/* 許願：送出 */
 $('#wSend').onclick=async()=>{
   const run_id = $('#wRun').value || null;
   const category = $('#wCat').value.trim() || null;
@@ -283,13 +289,16 @@ $('#wSend').onclick=async()=>{
   const {error}=await sb.from('wishes').insert([{run_id, category, product_name, product_url, content, image_path}]);
   if(error){ alert('送出失敗：'+error.message); return; }
   alert('已送出，感謝許願！'); wish.style.display='none';
+
   // reset
   ['wRun','wCat','wName','wUrl','wContent','wImg'].forEach(id=>{
-    const el=document.getElementById(id); if(el.type==='file') el.value=''; else el.value='';
+    const el=document.getElementById(id);
+    if(el.type==='file') el.value='';
+    else el.value='';
   });
 };
 
-// init
+/* 啟動 */
 (async function(){
   await loadNotice();
   await loadRuns();
