@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net"/>
 <style>
 :root{
-  --bg:#f7f3ef;--paper:#fffdf9;--card:#fff;--ink:#2b2b2b;--muted:#7a7267;
+  --bg:#f8f5f1;--paper:#fffdf9;--card:#fff;--ink:#2b2b2b;--muted:#7a7267;
   --brand:#8B5E34;--border:#eadfcd;--shadow:0 10px 24px rgba(139,94,52,.08);
   --radius:14px;--maxw:1100px
 }
@@ -22,9 +22,9 @@ body{margin:0;background:linear-gradient(180deg,#f8f5f1, #f7f3ef);color:var(--in
 
 /* 工具列（橫排） */
 .toolbar{display:flex;gap:10px;align-items:center;margin:10px 0 14px}
-#q{width:260px}                 /* 只縮小搜尋框，其餘照舊 */
+#q{width:260px}
 .toolbar select{min-width:160px}
-.toolbar .spacer{flex:1}        /* 把「我要許願」推到最右側 */
+.toolbar .spacer{flex:1}
 
 input,select,button,textarea{border:1px solid var(--border);border-radius:999px;padding:9px 12px;background:#fff}
 select{padding-right:28px}
@@ -37,7 +37,7 @@ button{background:var(--brand);color:#fff;cursor:pointer}
 .run{background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:10px;min-width:240px}
 
 .grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(260px,1fr));gap:12px}
-.card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+.card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;cursor:pointer}
 .card .thumb{height:220px;background:#f5efe7;display:flex;align-items:center;justify-content:center}
 .card .thumb img{max-width:100%;max-height:100%;object-fit:contain}
 .card .body{padding:10px}
@@ -57,6 +57,20 @@ button{background:var(--brand);color:#fff;cursor:pointer}
 .form textarea{border-radius:12px;min-height:100px}
 .helper{font-size:12px;color:var(--muted);margin-top:-6px}
 @media (max-width:860px){.form{grid-template-columns:1fr}}
+
+/* 商品詳情 Modal */
+#prodModal .sheet{width:min(980px,94vw);padding:0}
+.pd-head{display:flex;gap:16px;padding:16px 16px 8px;border-bottom:1px solid var(--border)}
+.pd-title{font-size:18px;font-weight:800;margin:0}
+.pd-body{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;padding:16px}
+@media(max-width:920px){.pd-body{grid-template-columns:1fr}}
+.pd-gallery{position:relative;background:#f5efe7;border:1px solid var(--border);border-radius:14px;min-height:360px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.pd-gallery img{max-width:100%;max-height:100%;object-fit:contain}
+.pd-nav{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+.pd-btn{pointer-events:auto;border:none;background:#000a;color:#fff;border-radius:999px;width:36px;height:36px;display:grid;place-items:center;cursor:pointer}
+.pd-meta .row{margin:8px 0}
+.pd-price{font-size:20px;font-weight:800;color:#b24e00}
+.pd-close{margin-left:auto;background:#fff;color:#2b2b2b}
 </style>
 </head>
 <body>
@@ -137,8 +151,36 @@ button{background:var(--brand);color:#fff;cursor:pointer}
   </div>
 </div>
 
+<!-- 商品詳情 Modal -->
+<div id="prodModal" class="modal" aria-hidden="true">
+  <div class="overlay"></div>
+  <div class="sheet">
+    <div class="pd-head" style="align-items:center">
+      <h3 class="pd-title" id="pdTitle">—</h3>
+      <button class="pd-close btn-ghost" id="pdClose">關閉</button>
+    </div>
+    <div class="pd-body">
+      <div class="pd-gallery">
+        <img id="pdImg" alt=""/>
+        <div class="pd-nav">
+          <button class="pd-btn" id="pdPrev" aria-label="上一張">‹</button>
+          <button class="pd-btn" id="pdNext" aria-label="下一張">›</button>
+        </div>
+      </div>
+      <div class="pd-meta">
+        <div class="row"><span class="badge" id="pdCat"></span></div>
+        <div class="row pd-price" id="pdPrice">NT$—</div>
+        <div class="row helper" id="pdShip">開始寄送日：—（三天內寄送）</div>
+        <div class="row helper" id="pdPid"></div>
+        <div class="row" id="pdDesc"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+/* ==== Supabase ==== */
 const supabaseUrl='https://llbpmqyjigovxixeohzr.supabase.co';
 const supabaseKey='sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';
 const BUCKET='yuyu.f86';
@@ -147,39 +189,66 @@ const sb=supabase.createClient(supabaseUrl,supabaseKey);
 function publicUrl(p){ if(!p) return ''; const {data}=sb.storage.from(BUCKET).getPublicUrl(p); return data?.publicUrl||''; }
 const $=s=>document.querySelector(s);
 
+/* ==== State ==== */
 let runs=[], normalRuns=[], poolRuns=[];
+let runById=new Map();
 let allProducts=[], categories=[];
+let linksByRun = new Map();        // run_id -> [product_id...]
+let runsByProduct = new Map();     // product_id -> [run_id...]
+let productIndexById = new Map();  // for quick lookup
 
-/* 首頁「最近連線公告」 */
+/* ==== Helpers ==== */
+function runLabel(r){
+  const d = r.ship_start_date || r.start_date || '';
+  return `${r.title||r.region||'連線'}｜${d||''}`;
+}
+function bestRunForProduct(productId, preferredRunId){
+  const arr = runsByProduct.get(productId) || [];
+  // 1) 若有指定 run（使用者在篩選器選的），且商品屬於該 run，就用它
+  if(preferredRunId && arr.includes(preferredRunId)) return runById.get(preferredRunId)||null;
+  // 2) 否則選「該商品所屬的非 Pool 連線中，ship_start_date 最晚者」，若無 ship_start_date 再比 created_at
+  let best=null;
+  for(const rid of arr){
+    const r = runById.get(rid); if(!r) continue;
+    if(!best) { best=r; continue; }
+    const a = r.ship_start_date? new Date(r.ship_start_date): new Date(r.created_at||0);
+    const b = best.ship_start_date? new Date(best.ship_start_date): new Date(best.created_at||0);
+    if(a>b) best=r;
+  }
+  return best;
+}
+function shipTextFromRun(r){
+  if(!r) return '開始寄送日：—（三天內寄送）';
+  const d = r.ship_start_date || '';
+  return `開始寄送日：${d||'—'}（三天內寄送）`;
+}
+
+/* ==== 首頁「最近連線公告」 ==== */
 async function loadNotice(){
   const {data}=await sb.from('site_meta').select('value').eq('key','home_notice').maybeSingle();
   if(data?.value){ $('#homeNotice').textContent=data.value; $('#homeNotice').style.display='block'; }
 }
 
-function runLabel(r){
-  const d = r.ship_start_date || r.start_date || '';
-  return `${r.title||r.region||'連線'}｜${d||''}`;
-}
-
-/* 連線（排除 Pool，並顯示在最近連線與許願下拉） */
+/* ==== 連線（排除 Pool，顯示在最近連線與許願下拉） ==== */
 async function loadRuns(){
   const {data}=await sb.from('runs').select('*').order('created_at',{ascending:false});
   runs = data||[];
   poolRuns = runs.filter(r=>r.is_pool);
   normalRuns = runs.filter(r=>!r.is_pool);
+  runById = new Map(normalRuns.map(r=>[r.id, r])); // 只記錄非 Pool（前台不顯示 Pool 內容）
 
-  // 最近連線卡片
+  // 最近連線卡片（把「寄送」改成「開始寄送日（＋三天內寄送）」）
   const row=$('#runsRow'); row.innerHTML='';
   normalRuns.slice(0,6).forEach(r=>{
     const div=document.createElement('div'); div.className='run';
     div.innerHTML = `
       <div class="fw">${r.title||r.region||''}</div>
       <div class="helper">${(r.start_date||'')} ~ ${(r.end_date||'')}</div>
-      <div class="helper">寄送：${r.ship_start_date||''}</div>`;
+      <div class="helper">開始寄送日：${r.ship_start_date||''}（三天內寄送）</div>`;
     row.appendChild(div);
   });
 
-  // 工具列：全部連線
+  // 工具列：全部連線（只列非 Pool）
   const f=$('#filterRun'); f.innerHTML='<option value="">全部連線</option>';
   normalRuns.forEach(r=> f.appendChild(new Option(runLabel(r), r.id)));
 
@@ -188,7 +257,7 @@ async function loadRuns(){
   normalRuns.forEach(r=> w.appendChild(new Option(runLabel(r), r.id)));
 }
 
-/* 分類（工具列：下拉；許願：datalist 可輸入） */
+/* ==== 分類（工具列下拉；許願 datalist） ==== */
 async function loadCategories(){
   const {data}=await sb.from('products').select('category').not('category','is',null);
   categories = [...new Set((data||[]).map(x=>x.category).filter(Boolean))]
@@ -202,18 +271,33 @@ async function loadCategories(){
   });
 }
 
-/* 商品清單：僅顯示「被分派到非 Pool 連線」的商品 */
+/* ==== 商品清單：僅顯示「被分派到非 Pool 連線」的商品 ==== */
 async function loadProducts(){
   const normalIds=normalRuns.map(r=>r.id);
   if(!normalIds.length){ $('#list').innerHTML=''; return; }
-  const {data:links}=await sb.from('product_runs').select('product_id,run_id').in('run_id', normalIds);
+
+  const {data:links}=await sb.from('product_runs')
+    .select('product_id,run_id').in('run_id', normalIds);
+
+  // 建立 run -> product_ids 對照，同時建立 product -> run_ids 對照
+  linksByRun = new Map();
+  runsByProduct = new Map();
+  (links||[]).forEach(l=>{
+    if(!linksByRun.has(l.run_id)) linksByRun.set(l.run_id, []);
+    linksByRun.get(l.run_id).push(l.product_id);
+    if(!runsByProduct.has(l.product_id)) runsByProduct.set(l.product_id, []);
+    runsByProduct.get(l.product_id).push(l.run_id);
+  });
+
+  // 取所有實際有指派到非 Pool 連線的商品
   const ids=[...new Set((links||[]).map(x=>x.product_id))];
   if(ids.length===0){ $('#list').innerHTML=''; return; }
 
   const {data}=await sb.from('products')
-    .select('id,name,price,category,product_id,eta_text,img_url,images,created_at')
+    .select('id,name,price,category,product_id,eta_text,img_url,images,description,created_at')
     .in('id', ids).order('created_at', {ascending:false});
   allProducts = data||[];
+  productIndexById = new Map(allProducts.map((p,i)=>[p.id,i]));
   renderList();
 }
 
@@ -222,13 +306,27 @@ function firstImage(p){
   const first = p.img_url || lines[0] || '';
   return publicUrl(first);
 }
+function gatherImages(p){
+  const arr=[];
+  if(p.img_url) arr.push(publicUrl(p.img_url));
+  const more=(p.images||'').split(/\n+/).filter(Boolean).map(publicUrl);
+  return [...arr, ...more].filter(Boolean);
+}
 
 function renderList(){
   const q = $('#q').value.trim().toLowerCase();
+  const runId = $('#filterRun').value || '';  // 依所選連線過濾（非 Pool）
   const cat = $('#filterCat').value || '';
   const sort = $('#sort').value;
 
   let arr = [...allProducts];
+
+  // 依連線過濾（只看 runId 對應 product_ids）
+  if(runId){
+    const allow = new Set(linksByRun.get(runId) || []);
+    arr = arr.filter(p=> allow.has(p.id));
+  }
+
   if(q)   arr = arr.filter(p=> (p.name||'').toLowerCase().includes(q) || (p.product_id||'').toLowerCase().includes(q));
   if(cat) arr = arr.filter(p=> (p.category||'')===cat);
 
@@ -240,29 +338,64 @@ function renderList(){
   arr.forEach(p=>{
     const div=document.createElement('div'); div.className='card';
     const img=firstImage(p);
+    const r = bestRunForProduct(p.id, runId);
     div.innerHTML=`
       <div class="thumb">${img?`<img src="${img}" alt=""/>`:'<span class="helper">無圖</span>'}</div>
       <div class="body">
         <div class="fw">${p.name||''}</div>
         <div class="helper">${p.category? `<span class="badge">${p.category}</span>`:''}</div>
         <div class="price" style="margin-top:6px">NT$${p.price??''}</div>
-        <div class="helper">到貨/寄送：${p.eta_text||''}</div>
+        <div class="helper">${shipTextFromRun(r)}</div>
       </div>`;
+    // ★ 可點擊開啟詳情
+    div.addEventListener('click', ()=> openProduct(p.id, runId));
     box.appendChild(div);
   });
 }
 
-$('#q').addEventListener('input', renderList);
-$('#filterCat').addEventListener('change', renderList);
-$('#sort').addEventListener('change', renderList);
+/* ==== 商品詳情 Modal ==== */
+let PD={idx:0, imgs:[], pid:null, prefRunId:null};
 
-/* 許願 Modal：開關 */
+function openProduct(id, preferredRunId){
+  const pIndex = productIndexById.get(id);
+  if(pIndex==null) return;
+  const p = allProducts[pIndex];
+  PD.pid = id;
+  PD.prefRunId = preferredRunId||'';
+  PD.imgs = gatherImages(p);
+  PD.idx = 0;
+
+  $('#pdTitle').textContent = p.name||'';
+  $('#pdCat').textContent = p.category||'';
+  $('#pdCat').style.display = p.category? 'inline-block':'none';
+  $('#pdPrice').textContent = (p.price!=null)? `NT$${p.price}` : 'NT$—';
+  $('#pdPid').textContent = p.product_id? `商品編號：${p.product_id}` : '';
+  $('#pdDesc').textContent = p.description||'';
+  $('#pdImg').src = PD.imgs[0] || '';
+  // 與卡片一致的寄送文案
+  const r = bestRunForProduct(id, PD.prefRunId);
+  $('#pdShip').textContent = shipTextFromRun(r);
+
+  const modal=$('#prodModal'); modal.style.display='block';
+}
+function closeProduct(){ $('#prodModal').style.display='none'; }
+function navImg(step){
+  if(!PD.imgs.length) return;
+  PD.idx = (PD.idx + step + PD.imgs.length) % PD.imgs.length;
+  $('#pdImg').src = PD.imgs[PD.idx];
+}
+
+$('#pdClose').onclick=closeProduct;
+$('#prodModal .overlay').onclick=closeProduct;
+$('#pdPrev').onclick=()=>navImg(-1);
+$('#pdNext').onclick=()=>navImg(1);
+
+/* ==== 許願 Modal：開關+送出（沿用原本） ==== */
 const wish=$('#wishModal');
 $('#btnWish').onclick=()=> wish.style.display='block';
 $('#wishModal .overlay').onclick=()=> wish.style.display='none';
 $('#wClose').onclick=()=> wish.style.display='none';
 
-/* 許願：送出 */
 $('#wSend').onclick=async()=>{
   const run_id = $('#wRun').value || null;
   const category = $('#wCat').value.trim() || null;
@@ -298,7 +431,13 @@ $('#wSend').onclick=async()=>{
   });
 };
 
-/* 啟動 */
+/* ==== 篩選器事件 ==== */
+$('#q').addEventListener('input', renderList);
+$('#filterRun').addEventListener('change', renderList);
+$('#filterCat').addEventListener('change', renderList);
+$('#sort').addEventListener('change', renderList);
+
+/* ==== 啟動 ==== */
 (async function(){
   await loadNotice();
   await loadRuns();
