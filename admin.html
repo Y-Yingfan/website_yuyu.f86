@@ -26,14 +26,18 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
 .preview img{max-width:100%;max-height:100%;object-fit:contain}
 .preview button{position:absolute;top:4px;right:4px;border:none;background:#000a;color:#fff;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:12px}
 .badge{display:inline-block;border:1px solid var(--border);padding:3px 8px;border-radius:999px;font-size:12px;background:#fff}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
-.card{border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px}
-.card .muted{font-size:12px}
+
 /* Modal */
 .modal{display:none;position:fixed;inset:0;z-index:1000}
 .overlay{position:absolute;inset:0;background:rgba(0,0,0,.45)}
-.sheet{position:absolute;left:50%;top:50%;transform:translate(-50%, -50%);width:min(980px,92vw);max-height:90vh;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:16px}
+.sheet{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(980px,92vw);max-height:90vh;overflow:auto;background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:16px}
 .sheet h3{margin:0 0 8px}
+
+/* Pool grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.card{border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px}
+.card .muted{font-size:12px}
+hr.sep{border:none;border-top:1px dashed var(--border);margin:10px 0}
 </style>
 </head>
 <body>
@@ -45,6 +49,7 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
     <button class="tabbtn" data-tab="runs">Runs</button>
     <button class="tabbtn" data-tab="pool">Pool 派送</button>
     <button class="tabbtn" data-tab="bulk">Bulk Move</button>
+    <button class="tabbtn" data-tab="wishes">Wishes</button>
     <button class="tabbtn" data-tab="settings">Settings</button>
   </div>
 
@@ -61,11 +66,11 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
           <input id="pStatus" list="statusList" placeholder="選或自行輸入"/>
           <datalist id="statusList"><option value="現貨"></option><option value="預購"></option><option value="售罄"></option></datalist>
         </div>
-        <div><label>到貨日 arrival_time</label><input id="pArrival" type="date"/></div>
+        <div><label>開始寄送日（前台顯示）</label><input id="pArrival" type="date"/></div>
         <div><label>指派到連線（含共用池）</label><select id="pRunAssign"><option value="">— 選擇連線 —</option></select></div>
         <div><label>eta_text（若上面沒選可手填）</label><input id="pEta" placeholder="例：9/26 東京"/></div>
+        <div style="grid-column:1 / -1"><label>描述 description（非必填）</label><textarea id="pDesc" placeholder="想補充的說明文字…"></textarea></div>
         <div style="grid-column:1 / -1"><label>備註 / 補充 note</label><input id="pNote"/></div>
-        <div style="grid-column:1 / -1"><label>描述 description（非必填）</label><textarea id="pDesc" placeholder="想補充的說明或規格"></textarea></div>
         <div style="grid-column:1 / -1"><label>標籤 tags（逗號分隔）</label><input id="pTags" placeholder="3coins,and us,腮紅"/></div>
         <div><label>成本幣別</label><select id="pCostCurrency"><option value="TWD">TWD</option><option value="JPY">JPY</option><option value="KRW">KRW</option><option value="USD">USD</option></select></div>
         <div><label>成本（原幣）</label><input id="pCostForeign" type="number" step="0.01" min="0" placeholder="例如 350"/></div>
@@ -80,9 +85,8 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
           </div>
         </div>
       </div>
-      <div class="small muted" id="poolCTA" style="margin:6px 0 10px"></div>
       <div class="row">
-        <div class="flex"><button class="btn" id="btnCreateProduct">新增商品</button><span class="muted small">送出將自動建立 <code>product_runs</code> 對應（若有選連線）。</span></div>
+        <div><button class="btn" id="btnCreateProduct">新增商品</button></div>
       </div>
     </div>
 
@@ -99,7 +103,7 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
           <th>名稱</th><th style="width:90px">售價</th><th style="width:130px">分類</th>
           <th style="width:150px">編號</th><th style="width:220px">連線 / eta_text</th>
           <th style="width:160px">成本(TWD)</th><th style="width:120px">利潤</th>
-          <th style="width:240px">操作</th>
+          <th style="width:260px">操作</th>
         </tr></thead>
         <tbody></tbody>
       </table>
@@ -108,7 +112,7 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
 
   <!-- RUNS -->
   <section id="tab-runs" style="display:none">
-    <div class="panel" id="runForm">
+    <div class="panel">
       <h3 style="margin:0 0 8px">新增 / 編輯 連線</h3>
       <div class="row">
         <div><label>標題 title</label><input id="rTitle" placeholder="例：9/26 東京 或 JP 共用池"/></div>
@@ -117,13 +121,22 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
         <div><label>開始 start_date</label><input id="rStart" type="date"/></div>
         <div><label>結束 end_date</label><input id="rEnd" type="date"/></div>
         <div><label>寄送開始 ship_start_date</label><input id="rShip" type="date"/></div>
-        <div><label>備註 note</label><input id="rNote"/></div>
-        <div><label>是否啟用 is_active</label><select id="rActive"><option>true</option><option>false</option></select></div>
-        <div><label>首頁 featured</label><select id="rFeatured"><option>false</option><option>true</option></select></div>
-        <div><label>是否 Pool（共用池）</label><select id="rIsPool"><option value="false">否</option><option value="true">是</option></select></div>
+        <div style="grid-column:1 / -1"><label>備註 note</label><input id="rNote"/></div>
+        <div>
+          <label>是否啟用 is_active</label>
+          <select id="rActive"><option>true</option><option>false</option></select>
+        </div>
+        <div>
+          <label>首頁 featured</label>
+          <select id="rFeatured"><option>false</option><option>true</option></select>
+        </div>
+        <div>
+          <label>是否 Pool（共用池）</label>
+          <select id="rIsPool"><option value="false">否</option><option value="true">是</option></select>
+        </div>
       </div>
       <div style="display:flex;gap:10px">
-        <button class="btn" id="btnRunCreate">新增連線</button>
+        <button class="btn" id="btnRunCreate">儲存（新增/更新）</button>
         <button class="btn ghost" id="btnRunReset">清空</button>
       </div>
     </div>
@@ -139,7 +152,7 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
     </div>
   </section>
 
-  <!-- POOL 派送 -->
+  <!-- POOL 派送（從 pool 複製到 run） -->
   <section id="tab-pool" style="display:none">
     <div class="panel">
       <h3 style="margin:0 0 10px">從共用池「複製」商品到某次連線</h3>
@@ -153,7 +166,7 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
           <select id="poolTarget"><option value="">— 選擇目標連線 —</option></select>
         </div>
       </div>
-      <div class="small muted">說明：這裡是「複製」對應，會新增 <code>product_runs</code> 到目標連線；Pool 仍會保留，不會被移除。複製後同步：<code>arrival_time</code>＝目標連線 <code>ship_start_date</code>、<code>eta_text</code>＝目標連線標題。</div>
+      <div class="small muted">這裡是「複製」關聯：會新增 <code>product_runs</code> 到目標連線；Pool 仍保留。</div>
     </div>
 
     <div class="panel">
@@ -168,7 +181,7 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
     </div>
   </section>
 
-  <!-- BULK MOVE -->
+  <!-- BULK MOVE（複製） -->
   <section id="tab-bulk" style="display:none">
     <div class="panel">
       <h3 style="margin:0 0 10px">批次複製商品到另一個連線</h3>
@@ -177,7 +190,7 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
         <div><label>目標連線</label><select id="bulkTo"><option value="">— 選擇目標 —</option></select></div>
         <div><label>範圍</label><select id="bulkScope">
           <option value="linked">只包含已關聯的商品（product_runs）</option>
-          <option value="all">來源連線的全部商品（含未關聯 Pool 的）</option>
+          <option value="all">來源連線的全部商品（同上，通常仍以關聯為準）</option>
         </select></div>
       </div>
       <div style="display:flex;gap:8px">
@@ -185,6 +198,34 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
         <button class="btn" id="bulkDo">執行複製</button>
         <div id="bulkInfo" class="small muted" style="margin-left:8px"></div>
       </div>
+    </div>
+  </section>
+
+  <!-- WISHES -->
+  <section id="tab-wishes" style="display:none">
+    <div class="panel">
+      <h3 style="margin:0 0 8px">許願清單</h3>
+      <div class="row">
+        <div><label>篩選狀態</label>
+          <select id="wishStatusFilter">
+            <option value="">全部</option>
+            <option value="pending">pending</option>
+            <option value="approved">approved</option>
+            <option value="rejected">rejected</option>
+          </select>
+        </div>
+        <div><label>篩選連線</label>
+          <select id="wishRunFilter"><option value="">全部</option></select>
+        </div>
+      </div>
+      <table class="list" id="wishesTable" style="margin-top:10px">
+        <thead>
+          <tr>
+            <th>時間</th><th>連線</th><th>分類</th><th>商品名稱</th><th>網址</th><th>內容</th><th>圖片</th><th>狀態</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </div>
   </section>
 
@@ -202,22 +243,6 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
         <span class="muted small">儲存在 <code>site_meta</code>（key：<code>rate_JPY</code>/<code>rate_KRW</code>/<code>rate_USD</code>）。</span>
       </div>
     </div>
-
-    <!-- 新增：首頁「最近連線」/ 公告 -->
-    <div class="panel">
-      <h3 style="margin:0 0 10px">首頁「最近連線」/ 公告</h3>
-      <div class="row" style="grid-template-columns:1fr">
-        <div>
-          <label>顯示於前台首頁頂部（index 的提醒框）</label>
-          <textarea id="homeNoticeInput" placeholder="例：✈️ 最近連線：9/6～9 日本北海道"></textarea>
-        </div>
-      </div>
-      <div class="flex" style="gap:10px;margin-top:8px">
-        <button class="btn" id="btnSaveHomeNotice">儲存公告</button>
-        <button class="btn ghost" id="btnClearHomeNotice">清空</button>
-        <span class="muted small">儲存在 <code>site_meta</code> 的 <code>home_notice</code>，前台已自動讀取顯示。</span>
-      </div>
-    </div>
   </section>
 </div>
 
@@ -232,11 +257,11 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
       <div><label>分類</label><input id="eCategory" list="categoryList"/></div>
       <div><label>商品編號</label><input id="ePid"/></div>
       <div><label>狀態</label><input id="eStatus" list="statusList"/></div>
-      <div><label>到貨日</label><input id="eArrival" type="date"/></div>
+      <div><label>開始寄送日</label><input id="eArrival" type="date"/></div>
       <div><label>指派到連線</label><select id="eRunAssign"><option value="">— 選擇連線 —</option></select></div>
       <div><label>eta_text</label><input id="eEta"/></div>
-      <div style="grid-column:1 / -1"><label>備註</label><input id="eNote"/></div>
       <div style="grid-column:1 / -1"><label>描述</label><textarea id="eDesc"></textarea></div>
+      <div style="grid-column:1 / -1"><label>備註</label><input id="eNote"/></div>
       <div style="grid-column:1 / -1"><label>標籤（逗號分隔）</label><input id="eTags"/></div>
       <div><label>成本幣別</label><select id="eCostCurrency"><option>TWD</option><option>JPY</option><option>KRW</option><option>USD</option></select></div>
       <div><label>成本（原幣）</label><input id="eCostForeign" type="number" step="0.01" min="0"/></div>
@@ -260,13 +285,13 @@ textarea{min-height:72px}.btn{border:none;background:var(--brand);color:#fff;bor
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// === Supabase
+/* ==== Supabase 基本設定 ==== */
 const supabaseUrl='https://llbpmqyjigovxixeohzr.supabase.co';
 const supabaseKey='sb_publishable_fLryqSfqfQW5c8SD6umiJA_2YfoAthB';
 const BUCKET='yuyu.f86';
 const sb=supabase.createClient(supabaseUrl,supabaseKey);
 
-// === Tabs
+/* ==== Tabs ==== */
 document.querySelectorAll('.tabbtn').forEach(btn=>{
   btn.onclick=()=>{
     document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
@@ -276,12 +301,12 @@ document.querySelectorAll('.tabbtn').forEach(btn=>{
   };
 });
 
-// === Helpers
+/* ==== Helpers ==== */
 function publicUrlFromPath(path){ if(!path) return ''; const { data }=sb.storage.from(BUCKET).getPublicUrl(path); return data?.publicUrl||''; }
 let RATES={JPY:0.22, KRW:0.024, USD:32.0};
 let runsCache=[], poolRuns=[], normalRuns=[];
 
-// === Rates
+/* ==== Rates ==== */
 async function loadRates(){
   const keys=['rate_JPY','rate_KRW','rate_USD'];
   const { data }=await sb.from('site_meta').select('key,value').in('key', keys);
@@ -303,7 +328,7 @@ btnSaveRates.onclick=async()=>{
   await loadRates(); alert('已儲存匯率');
 };
 
-// === 成本自算
+/* 成本自算（新增/編輯） */
 ['pCostCurrency','pCostForeign'].forEach(id=>{
   document.getElementById(id).addEventListener('input',()=>{
     const cur=pCostCurrency.value, amt=Number(pCostForeign.value||0);
@@ -321,15 +346,20 @@ btnSaveRates.onclick=async()=>{
   });
 });
 
-// === Runs
-function runLabel(r){ return r.title||r.code||r.region||('Run#'+r.id); }
+/* ==== Runs ==== */
+function runLabel(r){
+  const d1=r.start_date? String(r.start_date):'';
+  const d2=r.end_date? String(r.end_date):'';
+  const date = (d1||d2)? `${d1}${d2?(' ~ '+d2):''}` : '';
+  return (r.title||r.code||r.region||('Run#'+r.id)) + (date? `（${date}）`: '');
+}
 async function loadRuns(){
   const { data }=await sb.from('runs').select('*').order('created_at',{ascending:false});
   runsCache=data||[];
   poolRuns=runsCache.filter(r=>r.is_pool);
   normalRuns=runsCache.filter(r=>!r.is_pool);
 
-  // Products 下拉
+  // Products 頁面的 run 下拉
   pRunAssign.innerHTML='<option value="">— 選擇連線 —</option>';
   eRunAssign.innerHTML='<option value="">— 選擇連線 —</option>';
   prodFilterRun.innerHTML='<option value="">全部商品</option>';
@@ -340,9 +370,10 @@ async function loadRuns(){
     prodFilterRun.appendChild(new Option(runLabel(r), r.id));
   });
 
+  // Runs tab 列表
   await renderRunsTable();
 
-  // Pool 下拉
+  // Pool tab 下拉
   poolSelect.innerHTML='<option value="">— 選擇 Pool —</option>';
   poolRuns.forEach(r=> poolSelect.appendChild(new Option(runLabel(r), r.id)));
   poolTarget.innerHTML='<option value="">— 選擇目標連線 —</option>';
@@ -355,6 +386,10 @@ async function loadRuns(){
     bulkFrom.appendChild(new Option(runLabel(r), r.id));
     bulkTo.appendChild(new Option(runLabel(r), r.id));
   });
+
+  // Wishes 篩選連線
+  wishRunFilter.innerHTML='<option value="">全部</option>';
+  runsCache.forEach(r=> wishRunFilter.appendChild(new Option(runLabel(r), r.id)));
 }
 pRunAssign.addEventListener('change', e=>{ try{ const o=JSON.parse(e.target.value||''); if(o.title) pEta.value=o.title; }catch(_){ } });
 eRunAssign.addEventListener('change', e=>{ try{ const o=JSON.parse(e.target.value||''); if(o.title) eEta.value=o.title; }catch(_){ } });
@@ -385,8 +420,7 @@ window.editRun=async(id)=>{
   rStart.value=r.start_date||''; rEnd.value=r.end_date||''; rShip.value=r.ship_start_date||'';
   rNote.value=r.note||''; rActive.value=String(!!r.is_active); rFeatured.value=String(!!r.is_featured);
   rIsPool.value=String(!!r.is_pool);
-  document.getElementById('runForm').dataset.editId=id;
-  btnRunCreate.textContent='儲存變更';
+  rTitle.dataset.editId=id;
 };
 window.deleteRun=async(id)=>{
   if(!confirm('確定刪除此連線？（會連同對應關聯移除）')) return;
@@ -408,28 +442,27 @@ btnRunCreate.onclick=async()=>{
     is_pool:(rIsPool.value==='true'),
   };
   if(!payload.title){ alert('請輸入標題'); return; }
-  const form=document.getElementById('runForm');
-  const editId=form.dataset.editId||null;
+  const editId=rTitle.dataset.editId||null;
   if(editId){
     const { error }=await sb.from('runs').update(payload).eq('id',editId);
     if(error){ alert('更新失敗：'+error.message); return; }
-    delete form.dataset.editId;
+    delete rTitle.dataset.editId;
   }else{
     const { error }=await sb.from('runs').insert(payload);
     if(error){ alert('新增失敗：'+error.message); return; }
   }
   btnRunReset.click(); await loadRuns(); alert('已儲存');
 };
-btnRunReset.onclick=()=>{ [rTitle,rCode,rRegion,rStart,rEnd,rShip,rNote].forEach(i=>i.value=''); rActive.value='true'; rFeatured.value='false'; rIsPool.value='false'; delete document.getElementById('runForm').dataset.editId; btnRunCreate.textContent='新增連線'; };
+btnRunReset.onclick=()=>{ [rTitle,rCode,rRegion,rStart,rEnd,rShip,rNote].forEach(i=>i.value=''); rActive.value='true'; rFeatured.value='false'; rIsPool.value='false'; delete rTitle.dataset.editId; };
 
-// === Categories datalist
+/* ==== Category datalist ==== */
 async function fillCategoryDatalist(){
   const { data }=await sb.from('products').select('category').not('category','is',null);
   const set=new Set((data||[]).map(x=>x.category).filter(Boolean));
   categoryList.innerHTML=''; Array.from(set).sort((a,b)=>a.localeCompare(b,'zh-Hant')).forEach(c=>categoryList.appendChild(new Option('',c)));
 }
 
-// === Auto product_id
+/* ==== Auto product_id ==== */
 async function genNextPid(){
   const d=new Date(), prefix=`P${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-`;
   const { data } = await sb.from('products').select('product_id').ilike('product_id', `${prefix}%`).order('product_id',{ascending:false}).limit(1);
@@ -438,7 +471,7 @@ async function genNextPid(){
 }
 function parseTags(s){ const raw=(s||'').trim(); return raw? raw.split(',').map(x=>x.trim()).filter(Boolean):null; }
 
-// === Upload helpers
+/* ==== Upload helpers ==== */
 const addFilesState=[]; const editFilesState=[];
 function renderPreviews(box, state){
   box.innerHTML=''; state.forEach((f,idx)=>{ const div=document.createElement('div'); div.className='preview';
@@ -467,7 +500,7 @@ async function uploadAll(state, baseFolder){
   return out;
 }
 
-// === Create Product
+/* ==== Create Product ==== */
 btnCreateProduct.onclick=async()=>{
   let pid=(pPid.value||'').trim(); if(!pid) pid=await genNextPid();
   let runObj=null; try{ runObj=JSON.parse(pRunAssign.value||''); }catch(_){}
@@ -492,11 +525,11 @@ btnCreateProduct.onclick=async()=>{
   const product=data?.[0];
   if(runObj?.id && product?.id){ await sb.from('product_runs').upsert({product_id:product.id, run_id:runObj.id},{onConflict:'product_id,run_id'}); }
   addFilesState.length=0; renderPreviews(imgPreviews, addFilesState);
-  ['pName','pPrice','pCategory','pPid','pStatus','pArrival','pEta','pNote','pDesc','pTags','pCostForeign','pCostNt'].forEach(id=>document.getElementById(id).value='');
+  ['pName','pPrice','pCategory','pPid','pStatus','pArrival','pEta','pNote','pDesc','pTags','pCostForeign','pCostNt'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
   alert('新增成功'); await fillCategoryDatalist(); await loadProducts();
 };
 
-// === Table / Edit / Delete
+/* ==== Table & Edit & Delete ==== */
 function nt(price,cost){ if(price==null||cost==null) return '—'; return Math.round(Number(price)-Number(cost)); }
 async function loadProducts(runFilterId=null){
   let q=sb.from('products').select('id,name,price,category,product_id,eta_text,cost_jpy,cost_nt,img_url,images').order('created_at',{ascending:false}).limit(50);
@@ -532,7 +565,7 @@ window.deleteProduct=async(id)=>{
   await loadProducts(prodFilterRun.value||null); alert('已刪除');
 };
 
-// === Edit modal
+/* ==== Edit modal ==== */
 const editModal=document.getElementById('editModal'); editModal.querySelector('.overlay').onclick=()=> editModal.style.display='none';
 document.getElementById('btnEditCancel').onclick=()=> editModal.style.display='none';
 let editing=null, keepOld=true, oldMain=null, oldImages=[];
@@ -546,7 +579,8 @@ async function openEdit(id){
   eName.value=data.name||''; ePrice.value=data.price??''; eCategory.value=data.category||''; ePid.value=data.product_id||'';
   eStatus.value=data.status||''; eArrival.value=data.arrival_time||''; eEta.value=data.eta_text||''; eNote.value=data.note||'';
   eDesc.value=data.description||''; eTags.value=(Array.isArray(data.tags)? data.tags.join(','): (data.tags||'')); eCostNt.value=data.cost_nt??'';
-  if(data.cost_jpy!=null){ eCostCurrency.value='JPY'; eCostForeign.value=data.cost_jpy; } else { eCostCurrency.value='TWD'; eCostForeign.value=''; }
+  if(data.cost_jpy!=null){ eCostCurrency.value='JPY'; eCostForeign.value=data.cost_jpy; }
+  else { eCostCurrency.value='TWD'; eCostForeign.value=''; }
 
   eRunAssign.value='';
   if(runId){ const v=JSON.stringify({id:runId,title:(runsCache.find(r=>r.id===runId)?.title||'')}); Array.from(eRunAssign.options).forEach(o=>{ if(o.value===v) eRunAssign.value=v; }); }
@@ -575,7 +609,8 @@ btnEditSave.onclick=async()=>{
   const payload={
     name:eName.value||null, price:ePrice.value?Number(ePrice.value):null,
     category:eCategory.value||null, product_id:ePid.value||null, status:eStatus.value||null,
-    arrival_time:eArrival.value||null, eta_text:eta, note:eNote.value||null, description:eDesc.value||null,
+    arrival_time:eArrival.value||null, eta_text:eta, note:eNote.value||null,
+    description:eDesc.value||null,
     img_url:main||null, images:imgs.join('\n'), cost_nt:eCostNt.value?Number(eCostNt.value):null,
     cost_jpy:(eCostCurrency.value==='JPY'? (eCostForeign.value?Number(eCostForeign.value):null) : null),
     tags: parseTags(eTags.value)
@@ -583,16 +618,20 @@ btnEditSave.onclick=async()=>{
   const { error }=await sb.from('products').update(payload).eq('id',editing.id);
   if(error){ alert('儲存失敗：'+error.message); return; }
 
+  // 更新 run 對應
   await sb.from('product_runs').delete().match({product_id:editing.id});
   if(runObj?.id){ await sb.from('product_runs').upsert({product_id:editing.id, run_id:runObj.id},{onConflict:'product_id,run_id'}); }
 
   alert('已更新'); editModal.style.display='none'; await fillCategoryDatalist(); await loadProducts(prodFilterRun.value||null);
 };
 
-// === Pool 派送
+/* ==== Pool 派送 ==== */
 let poolCheckedAll=false;
 poolSelect.addEventListener('change', loadPoolProducts);
-poolSelectAll.onclick=()=>{ poolCheckedAll=!poolCheckedAll; document.querySelectorAll('.poolItemChk').forEach(c=> c.checked=poolCheckedAll); };
+poolSelectAll.onclick=()=>{
+  poolCheckedAll=!poolCheckedAll;
+  document.querySelectorAll('.poolItemChk').forEach(c=> c.checked=poolCheckedAll);
+};
 async function loadPoolProducts(){
   const poolId=poolSelect.value||null;
   const box=document.getElementById('poolList'); box.innerHTML='';
@@ -625,67 +664,92 @@ poolCopy.onclick=async()=>{
   if(!poolId||!targetId){ alert('請選 Pool 與目標連線'); return; }
   const ids=[...document.querySelectorAll('.poolItemChk:checked')].map(c=>c.value);
   if(!ids.length){ alert('請先勾選要複製的商品'); return; }
-
-  // 1) 建立關聯
   const rows=ids.map(pid=>({product_id:pid, run_id:targetId}));
   const { error }=await sb.from('product_runs').upsert(rows,{onConflict:'product_id,run_id'});
   if(error){ alert('複製失敗：'+error.message); return; }
-
-  // 2) 同步到貨與 eta_text
-  const { data:targetRun }=await sb.from('runs').select('title,ship_start_date').eq('id',targetId).maybeSingle();
-  if(targetRun){
-    const patch={ eta_text: targetRun.title || null };
-    if(targetRun.ship_start_date) patch.arrival_time = targetRun.ship_start_date;
-    await sb.from('products').update(patch).in('id', ids);
-  }
-  alert(`已複製 ${ids.length} 件到目標連線，並同步到貨／eta_text`);
+  alert(`已複製 ${ids.length} 件到目標連線`);
 };
 
-// === Bulk
+/* ==== Bulk（複製） ==== */
 let bulkPreviewCount=0;
 bulkPreview.onclick=async()=>{
-  const from=bulkFrom.value||''; const to=bulkTo.value||''; if(!from||!to){ alert('請選來源與目標'); return; }
+  const from=bulkFrom.value||''; const to=bulkTo.value||''; const scope=bulkScope.value;
+  if(!from||!to){ alert('請選來源與目標'); return; }
+  let ids=[];
   const { data:pr }=await sb.from('product_runs').select('product_id').eq('run_id',from);
-  bulkPreviewCount=(pr||[]).length; bulkInfo.textContent=`預計複製 ${bulkPreviewCount} 件。`;
+  ids=(pr||[]).map(x=>x.product_id);
+  bulkPreviewCount=ids.length;
+  bulkInfo.textContent=`預計複製 ${bulkPreviewCount} 件。`;
 };
 bulkDo.onclick=async()=>{
-  const from=bulkFrom.value||''; const to=bulkTo.value||''; if(!from||!to){ alert('請選來源與目標'); return; }
-  const { data:pr }=await sb.from('product_runs').select('product_id').eq('run_id',from);
+  const to=bulkTo.value||''; if(!bulkPreviewCount||!to){ alert('請先預覽'); return; }
+  const from=bulkFrom.value||''; const { data:pr }=await sb.from('product_runs').select('product_id').eq('run_id',from);
   const ids=(pr||[]).map(x=>x.product_id);
   const rows=ids.map(pid=>({product_id:pid, run_id:to}));
   const { error }=await sb.from('product_runs').upsert(rows,{onConflict:'product_id,run_id'});
   if(error){ alert('執行失敗：'+error.message); return; }
-
-  const { data:targetRun }=await sb.from('runs').select('title,ship_start_date').eq('id',to).maybeSingle();
-  if(targetRun){
-    const patch={ eta_text: targetRun.title || null };
-    if(targetRun.ship_start_date) patch.arrival_time = targetRun.ship_start_date;
-    await sb.from('products').update(patch).in('id', ids);
-  }
-  alert(`已複製 ${ids.length} 件到目標連線，並同步到貨／eta_text`); bulkInfo.textContent='';
+  alert(`已複製 ${ids.length} 件到目標連線`); bulkInfo.textContent='';
 };
 
-// === Init
+/* ==== Wishes ==== */
+wishStatusFilter.addEventListener('change', loadWishes);
+wishRunFilter.addEventListener('change', loadWishes);
+
+async function loadWishes(){
+  let q=sb.from('wishes')
+    .select('id,created_at,run_id,category,product_name,product_url,content,image_path,status')
+    .order('created_at',{ascending:false});
+  const st=wishStatusFilter.value||''; if(st) q=q.eq('status', st);
+  const rid=wishRunFilter.value||''; if(rid) q=q.eq('run_id', rid);
+  const { data, error }=await q;
+  const tb=wishesTable.querySelector('tbody'); tb.innerHTML='';
+  if(error){ console.error(error); return; }
+  (data||[]).forEach(w=>{
+    const run = runsCache.find(r=>r.id===w.run_id);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="small muted">${new Date(w.created_at).toLocaleString('zh-TW')}</td>
+      <td>${run? runLabel(run):''}</td>
+      <td>${w.category||''}</td>
+      <td>${w.product_name||''}</td>
+      <td>${w.product_url? `<a href="${w.product_url}" target="_blank">連結</a>`:''}</td>
+      <td>${w.content||''}</td>
+      <td>${w.image_path? `<a href="${publicUrlFromPath(w.image_path)}" target="_blank">圖片</a>`:''}</td>
+      <td>
+        <select data-id="${w.id}" class="wish-status">
+          ${['pending','approved','rejected'].map(s=>`<option ${w.status===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </td>
+      <td>
+        <button class="btn ghost" onclick="openReply('${w.id}')">回覆</button>
+        <button class="btn ghost" onclick="deleteWish('${w.id}')">刪除</button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+  // 綁定狀態更新
+  document.querySelectorAll('.wish-status').forEach(sel=>{
+    sel.onchange=async(e)=>{
+      const id=e.target.getAttribute('data-id'); const st=e.target.value;
+      await sb.from('wishes').update({status:st}).eq('id',id);
+    };
+  });
+}
+window.deleteWish=async(id)=>{
+  if(!confirm('刪除此許願單？')) return;
+  const { error }=await sb.from('wishes').delete().eq('id',id);
+  if(error){ alert('刪除失敗：'+error.message); return; }
+  await loadWishes();
+};
+window.openReply=async(id)=>{
+  const text=prompt('輸入回覆內容'); if(!text) return;
+  await sb.from('wish_replies').insert({wish_id:id, reply_text:text});
+  alert('已回覆');
+};
+
+/* ==== init ==== */
 document.querySelectorAll('.tabbtn').forEach((b,i)=>{ if(i===0) b.click(); });
 (async function init(){
-  await loadRates(); await loadRuns(); await fillCategoryDatalist(); await loadProducts();
-
-  // 設定頁面：讀取首頁公告
-  const { data }=await sb.from('site_meta').select('value').eq('key','home_notice').maybeSingle();
-  homeNoticeInput.value = data?.value || '';
-
-  btnSaveHomeNotice.onclick = async ()=>{
-    const v = (homeNoticeInput.value||'').trim();
-    await sb.from('site_meta').upsert({key:'home_notice', value:v},{onConflict:'key'});
-    alert('已儲存首頁公告');
-  };
-  btnClearHomeNotice.onclick = async ()=>{
-    homeNoticeInput.value='';
-    await sb.from('site_meta').upsert({key:'home_notice', value:''},{onConflict:'key'});
-    alert('已清空首頁公告');
-  };
-
-  poolCTA.innerHTML='提示：共用池請在「Runs」建立（勾選 <strong>Pool</strong>）。之後到「Pool 派送」選 Pool → 多選商品 → 複製到目標連線（會同步到貨日期與 eta）。';
+  await loadRates(); await loadRuns(); await fillCategoryDatalist(); await loadProducts(); await loadWishes();
 })();
 </script>
 </body>
