@@ -92,7 +92,7 @@ hr.sep{border:none;border-top:1px dashed var(--border);margin:10px 0}
 
     <div class="panel">
       <div class="flex" style="justify-content:space-between;align-items:center">
-        <h3 style="margin:0 0 10px">已新增（最新 50，可編輯/刪除）</h3>
+        <h3 style="margin:0 0 10px">已新增（每頁 50，可編輯/刪除）</h3>
         <div class="flex" style="gap:8px;align-items:center">
           <label class="small">檢視</label>
           <select id="prodFilterRun" style="min-width:220px"><option value="">全部商品</option></select>
@@ -107,6 +107,12 @@ hr.sep{border:none;border-top:1px dashed var(--border);margin:10px 0}
         </tr></thead>
         <tbody></tbody>
       </table>
+      <!-- 分頁列 -->
+      <div id="prodPager" class="small muted" style="display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:8px">
+        <button class="btn ghost" id="prodPrev">上一頁</button>
+        <span id="prodPageInfo">第 1 / 1 頁，共 0 筆</span>
+        <button class="btn ghost" id="prodNext">下一頁</button>
+      </div>
     </div>
   </section>
 
@@ -231,24 +237,26 @@ hr.sep{border:none;border-top:1px dashed var(--border);margin:10px 0}
 
   <!-- SETTINGS -->
   <section id="tab-settings" style="display:none">
+    <!-- 卡片 1：首頁公告 -->
     <div class="panel">
-      <div class="panel">
-  <h3 style="margin:0 0 10px">首頁「最近連線」/ 公告</h3>
-  <div class="small muted">顯示於前台首頁頂部（index 的提醒條）。</div>
-  <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
-    <span class="muted" style="display:inline-flex;align-items:center;gap:6px">
-      <span style="font-size:18px">🛫</span> 最近連線：9/6~9 日本北海道
-    </span>
-  </div>
+      <h3 style="margin:0 0 10px">首頁「最近連線」/ 公告</h3>
+      <div class="small muted">顯示於前台首頁頂部（index 的提醒條）。</div>
+      <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
+        <span class="muted" style="display:inline-flex;align-items:center;gap:6px">
+          <span style="font-size:18px">🛫</span> 最近連線：9/6~9 日本北海道
+        </span>
+      </div>
 
-  <textarea id="homeNotice" style="width:100%;min-height:64px;border:1px solid var(--border);border-radius:10px;padding:10px;background:#fffaf2"></textarea>
-  <div style="display:flex;gap:10px;margin-top:10px;align-items:center">
-    <button class="btn" id="btnSaveNotice">儲存公告</button>
-    <button class="btn ghost" id="btnClearNotice">清空</button>
-    <span class="small muted">儲存在 <code>site_meta</code> 的 <code>home_notice</code>，前台已自動讀取顯示。</span>
-  </div>
-</div>
+      <textarea id="homeNotice" style="width:100%;min-height:64px;border:1px solid var(--border);border-radius:10px;padding:10px;background:#fffaf2"></textarea>
+      <div style="display:flex;gap:10px;margin-top:10px;align-items:center">
+        <button class="btn" id="btnSaveNotice">儲存公告</button>
+        <button class="btn ghost" id="btnClearNotice">清空</button>
+        <span class="small muted">儲存在 <code>site_meta</code> 的 <code>home_notice</code>，前台已自動讀取顯示。</span>
+      </div>
+    </div>
 
+    <!-- 卡片 2：匯率設定 -->
+    <div class="panel">
       <h3 style="margin:0 0 10px">匯率設定</h3>
       <div class="row">
         <div><label>JPY → TWD</label><input id="rateJPY" type="number" step="0.0001" /></div>
@@ -354,13 +362,11 @@ async function loadHomeNotice() {
     .maybeSingle();
   if (!error && data) homeNotice.value = data.value || '';
 }
-
 btnSaveNotice.onclick = async () => {
   const val = (homeNotice.value || '').trim();
   await sb.from('site_meta').upsert({ key: 'home_notice', value: val }, { onConflict: 'key' });
   alert('已儲存首頁公告');
 };
-
 btnClearNotice.onclick = async () => {
   if (!confirm('要清空首頁公告嗎？')) return;
   await sb.from('site_meta').delete().eq('key', 'home_notice');
@@ -368,7 +374,6 @@ btnClearNotice.onclick = async () => {
   alert('已清空');
 };
 
-  
 /* 成本自算（新增/編輯） */
 ['pCostCurrency','pCostForeign'].forEach(id=>{
   document.getElementById(id).addEventListener('input',()=>{
@@ -570,17 +575,67 @@ btnCreateProduct.onclick=async()=>{
   alert('新增成功'); await fillCategoryDatalist(); await loadProducts();
 };
 
-/* ==== Table & Edit & Delete ==== */
-function nt(price,cost){ if(price==null||cost==null) return '—'; return Math.round(Number(price)-Number(cost)); }
-async function loadProducts(runFilterId=null){
-  let q=sb.from('products').select('id,name,price,category,product_id,eta_text,cost_jpy,cost_nt,img_url,images').order('created_at',{ascending:false}).limit(50);
-  if(runFilterId){
-    const { data:pr }=await sb.from('product_runs').select('product_id').eq('run_id',runFilterId);
-    const ids=(pr||[]).map(x=>x.product_id); q = ids.length? q.in('id',ids) : q.in('id',['00000000-0000-0000-0000-000000000000']);
+/* ==== Products：分頁 ==== */
+let pageSize = 50;
+let prodPage = 1;           // 1-based
+let prodTotal = 0;
+let prodPages = 1;
+let currentRunFilter = null;
+
+function updateProdPager(){
+  prodPages = Math.max(1, Math.ceil(prodTotal / pageSize));
+  document.getElementById('prodPageInfo').textContent = `第 ${prodPage} / ${prodPages} 頁，共 ${prodTotal} 筆`;
+  document.getElementById('prodPrev').disabled = (prodPage<=1);
+  document.getElementById('prodNext').disabled = (prodPage>=prodPages);
+}
+
+async function loadProducts(runFilterId = currentRunFilter, gotoPage = prodPage){
+  // 若篩選變了，回到第一頁
+  if (runFilterId !== currentRunFilter){
+    currentRunFilter = runFilterId;
+    prodPage = 1;
+  }else{
+    prodPage = Math.max(1, gotoPage||1);
   }
-  const { data, error }=await q; if(error){ console.error(error); return; }
+
+  const from = (prodPage-1)*pageSize;
+  const to   = from + pageSize - 1;
+
+  let rows = [];
+  if (!currentRunFilter){
+    // 未篩選：DB 端計數 + 分頁
+    const head = await sb.from('products').select('id', { count:'exact', head:true });
+    prodTotal = head.count || 0;
+
+    const { data, error } = await sb
+      .from('products')
+      .select('id,name,price,category,product_id,eta_text,cost_jpy,cost_nt,img_url,images')
+      .order('created_at',{ascending:false})
+      .range(from, to);
+    if (error){ console.error(error); return; }
+    rows = data||[];
+  }else{
+    // 有篩選 run：先取 product_ids，再用 in + range（同樣可由 DB 排序）
+    const { data: pr } = await sb.from('product_runs').select('product_id').eq('run_id', currentRunFilter);
+    const ids = (pr||[]).map(x=>x.product_id);
+    prodTotal = ids.length;
+
+    if (ids.length){
+      const { data, error } = await sb
+        .from('products')
+        .select('id,name,price,category,product_id,eta_text,cost_jpy,cost_nt,img_url,images')
+        .in('id', ids)
+        .order('created_at',{ascending:false})
+        .range(from, to);
+      if (error){ console.error(error); return; }
+      rows = data||[];
+    }else{
+      rows = [];
+    }
+  }
+
   const tb=productsTable.querySelector('tbody'); tb.innerHTML='';
-  (data||[]).forEach(p=>{
+  rows.forEach(p=>{
     const costNT=(p.cost_nt!=null)?Number(p.cost_nt):(p.cost_jpy!=null?Number(p.cost_jpy)*RATES.JPY:null);
     const tr=document.createElement('tr'); tr.innerHTML=`
       <td>${p.name||''}</td><td>${p.price??''}</td><td>${p.category||''}</td>
@@ -593,8 +648,15 @@ async function loadProducts(runFilterId=null){
       </td>`;
     tb.appendChild(tr);
   });
+
+  updateProdPager();
 }
-prodFilterRun.addEventListener('change',e=> loadProducts(e.target.value||null));
+document.getElementById('prodPrev').onclick = ()=>{ if(prodPage>1) loadProducts(currentRunFilter, prodPage-1); };
+document.getElementById('prodNext').onclick = ()=>{ if(prodPage<prodPages) loadProducts(currentRunFilter, prodPage+1); };
+prodFilterRun.addEventListener('change',e=> loadProducts(e.target.value||null, 1));
+
+/* 其他表格操作 */
+function nt(price,cost){ if(price==null||cost==null) return '—'; return Math.round(Number(price)-Number(cost)); }
 function copyPublicImages(main, others){
   const arr=[main, ...others.split(/\n+/).filter(Boolean)].filter(Boolean).map(publicUrlFromPath);
   navigator.clipboard.writeText(arr.join('\n')); alert('已複製圖片 URL（公開）');
@@ -603,7 +665,13 @@ window.deleteProduct=async(id)=>{
   if(!confirm('確定刪除此商品？（會連同對應關聯移除）')) return;
   const { error }=await sb.from('products').delete().eq('id',id);
   if(error){ alert('刪除失敗：'+error.message); return; }
-  await loadProducts(prodFilterRun.value||null); alert('已刪除');
+  // 若刪到本頁無資料且非第 1 頁，自動往前一頁
+  const beforeCount = prodTotal;
+  prodTotal = Math.max(0, prodTotal-1);
+  const lastPageAfterDelete = Math.max(1, Math.ceil(prodTotal / pageSize));
+  const targetPage = Math.min(prodPage, lastPageAfterDelete);
+  await loadProducts(currentRunFilter, targetPage);
+  alert('已刪除');
 };
 
 /* ==== Edit modal ==== */
@@ -663,7 +731,7 @@ btnEditSave.onclick=async()=>{
   await sb.from('product_runs').delete().match({product_id:editing.id});
   if(runObj?.id){ await sb.from('product_runs').upsert({product_id:editing.id, run_id:runObj.id},{onConflict:'product_id,run_id'}); }
 
-  alert('已更新'); editModal.style.display='none'; await fillCategoryDatalist(); await loadProducts(prodFilterRun.value||null);
+  alert('已更新'); editModal.style.display='none'; await fillCategoryDatalist(); await loadProducts(currentRunFilter, prodPage);
 };
 
 /* ==== Pool 派送 ==== */
@@ -790,9 +858,8 @@ window.openReply=async(id)=>{
 /* ==== init ==== */
 document.querySelectorAll('.tabbtn').forEach((b,i)=>{ if(i===0) b.click(); });
 (async function init(){
-  await loadRates(); await loadRuns(); await fillCategoryDatalist(); await loadProducts(); await loadWishes();await loadHomeNotice();
+  await loadRates(); await loadRuns(); await fillCategoryDatalist(); await loadProducts(); await loadWishes(); await loadHomeNotice();
 })();
 </script>
 </body>
 </html>
-
