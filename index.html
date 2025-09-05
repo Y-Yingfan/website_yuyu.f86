@@ -80,12 +80,11 @@ button{background:var(--brand);color:#fff;cursor:pointer}
 .pd-price{font-size:20px;font-weight:800;color:#b24e00}
 .pd-close{background:#fff;color:#2b2b2b}
 
-/* 詢問&下單（全螢幕覆蓋頁） */
-#orderPage{display:none;position:fixed;inset:0;background:#faf7f2;z-index:60}
-#orderPage .bar{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);background:#fff}
-#orderPage .bar h3{margin:0;font-size:18px}
-#orderPage .bar .spacer{flex:1}
-#orderPage .content{max-width:860px;margin:14px auto;padding:0 14px}
+/* 詢問&下單：小型 Modal */
+#orderModal .sheet{width:min(560px,92vw);padding:16px}
+.order-head{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);padding-bottom:10px}
+.order-head h3{margin:0;font-size:18px}
+.order-body{padding-top:12px}
 .linklist{display:grid;grid-template-columns:repeat(auto-fill, minmax(220px,1fr));gap:10px;margin-top:10px}
 .linkcard{border:1px solid var(--border);border-radius:14px;background:#fff;padding:12px}
 .linkcard a{color:#0b5cab;text-decoration:none;word-break:break-all}
@@ -144,7 +143,7 @@ button{background:var(--brand);color:#fff;cursor:pointer}
         <div class="helper">會帶出「連線標題｜起寄日期」。</div>
       </div>
       <div>
-        <label class="helper">選擇分類（可選擇分類或輸入）</label>
+        <label class="helper">選擇分類（可選或輸入）</label>
         <input id="wCat" list="catList" placeholder="選或輸入"/>
         <datalist id="catList"></datalist>
       </div>
@@ -207,31 +206,32 @@ button{background:var(--brand);color:#fff;cursor:pointer}
   </div>
 </div>
 
-<!-- 詢問&下單（覆蓋頁） -->
-<div id="orderPage" aria-hidden="true">
-  <div class="bar">
-    <h3>詢問＆下單</h3>
-    <div class="spacer"></div>
-    <button class="btn-ghost" id="orderBack">返回</button>
-  </div>
-  <div class="content">
-    <div class="warn">
-      下單功能尚在開發中，請先透過下方社群或官方 LINE 帳號聯繫／下單。
+<!-- 詢問&下單：小型 Modal -->
+<div id="orderModal" class="modal" aria-hidden="true">
+  <div class="overlay"></div>
+  <div class="sheet">
+    <div class="order-head">
+      <h3>詢問＆下單</h3>
+      <div style="flex:1"></div>
+      <button class="btn-ghost" id="orderClose">關閉</button>
     </div>
-    <div style="margin-top:10px">
-      <div class="helper">社群密碼</div>
-      <div id="orderPwd" style="font-weight:800;font-size:18px;margin-top:4px"></div>
-    </div>
-    <div style="margin-top:16px">
-      <div class="section-title" style="margin:0 0 8px">官方 LINE / 社群連結</div>
-      <div class="linklist" id="orderLinks"></div>
+    <div class="order-body">
+      <div class="warn">下單功能尚在開發中，請先透過下方社群或官方 LINE 帳號聯繫／下單。</div>
+      <div style="margin-top:10px">
+        <div class="helper">社群密碼</div>
+        <div id="orderPwd" style="font-weight:800;font-size:18px;margin-top:4px"></div>
+      </div>
+      <div style="margin-top:16px">
+        <div class="section-title" style="margin:0 0 8px">官方 LINE / 社群連結</div>
+        <div class="linklist" id="orderLinks"></div>
+      </div>
     </div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ==== 詢問＆下單頁設定（已填入你的資料） ==== */
+/* ==== 詢問＆下單頁設定（你的實際資料） ==== */
 const ORDER_PAGE_CONFIG = {
   password: '0628',
   links: [
@@ -467,8 +467,8 @@ $('#prodModal .overlay').onclick=closeProduct;
 $('#pdPrev').onclick=()=>navImg(-1);
 $('#pdNext').onclick=()=>navImg(1);
 
-/* ==== 詢問＆下單 覆蓋頁 ==== */
-function openOrderPage(){
+/* ==== 詢問＆下單：小型 Modal ==== */
+function openOrderModal(){
   // 填入密碼與連結
   $('#orderPwd').textContent = ORDER_PAGE_CONFIG.password || '（尚未提供）';
   const box=$('#orderLinks'); box.innerHTML='';
@@ -478,13 +478,13 @@ function openOrderPage(){
     a.textContent=link.label||link.url||'連結';
     card.appendChild(a); box.appendChild(card);
   });
-  // 顯示覆蓋頁
-  $('#orderPage').style.display='block';
+  // 顯示小 Modal
+  $('#orderModal').style.display='block';
 }
-function closeOrderPage(){ $('#orderPage').style.display='none'; }
-
-$('#pdAskOrder').onclick=openOrderPage;
-$('#orderBack').onclick=closeOrderPage;
+function closeOrderModal(){ $('#orderModal').style.display='none'; }
+$('#pdAskOrder').onclick=openOrderModal;
+$('#orderClose').onclick=closeOrderModal;
+document.querySelector('#orderModal .overlay').onclick=closeOrderModal;
 
 /* ==== 許願 Modal：開關+送出（維持原本） ==== */
 const wish=$('#wishModal');
@@ -543,5 +543,3 @@ $('#sort').addEventListener('change', renderList);
 </script>
 </body>
 </html>
-
-
